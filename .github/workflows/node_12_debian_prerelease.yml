@@ -1,0 +1,102 @@
+name: Create debian package
+
+on:
+  workflow_call:
+    secrets:
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
+      nexusAptRepoHost:
+        required: true
+        
+jobs:
+  build_and_publish_deb:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '12'
+
+    - name: Prepare environemt variables
+      run: |
+        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
+        echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+        echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+        echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
+        echo NAME=$(echo ClubAppService) >> $GITHUB_ENV
+    - name: Build service
+      run: |
+        sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
+        npm install
+        npm run build
+        npm run package
+        mkdir -p Publish/opt/hector/${{ env.NAME }}
+        mv build/* Publish/opt/hector/${{ env.NAME }}
+    - name: Create unit file path
+      run: mkdir -p Publish/etc/systemd/system/
+
+    - name: Build unit file
+      run: |
+        cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
+        [Unit]
+        Description=Hector ${{ env.NAME }}
+        After=network-online.target
+        Requires=network-online.target
+        
+        [Install]
+        WantedBy=multi-user.target
+        
+        [Service]
+        EnvironmentFile=/etc/serviceEnvironment
+        WorkingDirectory=/opt/hector/${{ env.NAME }}
+        ExecStart=/opt/hector/${{ env.NAME }}/${{ env.NAME }}
+        TimeoutStopSec=1
+        Restart=always
+        RestartSec=5
+        
+        # Output to syslog
+        StandardOutput=syslog
+        StandardError=syslog
+        SyslogIdentifier=${{ env.NAME }}.service
+        EOF
+  
+    - name: Create postinstall script
+      run: |
+        mkdir -p Publish/DEBIAN
+        cat << EOF > Publish/DEBIAN/postinst
+        #!/bin/sh
+        # stop service
+        service ${{ env.NAME }} stop
+        systemctl disable ${{ env.NAME }}.service
+        
+        # setup service
+        systemctl daemon-reload
+        systemctl enable ${{ env.NAME }}.service
+        service ${{ env.NAME }} start
+        EOF
+        chmod 755 Publish/DEBIAN/postinst
+    - name: build-deb-action
+      id: package
+      uses: jiro4989/build-deb-action@v2
+      with:
+        # Package name of debian package.
+        package: ${{ env.NAME }}
+        # Directory of release files.
+        package_root: ./Publish
+        # Package maintainer name.
+        maintainer: "Hectors-Welt GmbH"
+        # Package version.
+        version: ${{ env.VERSION }}
+        # Package architecture.
+        arch: all
+
+    - name: push deb package to nexus apt repo
+      run: |
+        curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}-pre" "${{ secrets.nexusAptRepoHost  }}"
