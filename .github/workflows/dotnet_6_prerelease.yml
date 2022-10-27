@@ -102,7 +102,7 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
       - name: Build
-        run: 'dotnet publish ${{env.NAME}}.csproj  --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
+        run: 'dotnet publish ${{ github.event.repository.name }}.csproj  --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
 
       - name: Create chocolatey package
         run: |
