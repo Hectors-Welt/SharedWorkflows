@@ -1,0 +1,262 @@
+name: Create v6 prerelease
+
+on:
+  workflow_call:
+    secrets:
+      dockerRepo:
+        required: true
+      packageRepoHost: 
+        required: true
+      packageRepoPassword:
+        required: true
+      packageRepoUsername:
+        required: true
+      packageRepoPort:
+        required: true
+      nexusDockerUsername:
+        required: true
+      nexusDockerPassword:
+        required: true
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
+      nexusAptRepoHost:
+        required: true
+      chocoRepo:
+        required: true
+      chocoApiKey:
+        required: true
+      
+      
+env:
+  REGISTRY: ${{ secrets.dockerRepo }}
+  SERVICE: ${{ github.event.repository.name }} 
+        
+jobs:
+  build_and_publish_zip:
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src
+
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.100
+
+    - name: Prepare environment variables
+      run: |
+        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
+        echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+        echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+        echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
+        echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+    - name: Build
+      run: 'dotnet publish --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
+
+    - name: Zip build results
+      run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .   
+
+    - name: copy file via ssh password
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.packageRepoHost }}
+        username: ${{ secrets.packageRepoUsername }}
+        password: ${{ secrets.PackageRepoPassword }}
+        port: ${{ secrets.packageRepoPort}}
+        source: ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip
+        target: prerelease/${{ env.NAME }}
+        strip_components: 3
+  
+  build_and_publish_choco_package:
+    
+    runs-on: windows-2019
+    defaults:
+      run:
+        working-directory: ./src
+    
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.100
+
+      - name: Prepare environment variables
+        run: |
+          echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
+          echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+          echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+          echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
+          echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+      - name: Build
+        run: 'dotnet publish --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
+
+      - name: Create chocolatey package
+        run: |
+          choco new ${{ github.event.repository.name }} --outputdirectory="C:\Program Files\ChocoPackages" --version  $(($env:GITHUB_REF -replace "refs/tags/prerelease-") + $("-pre")) 
+      - name: Delete powershell scripts
+        run: |
+          DEL "C:\Program Files\ChocoPackages\${{ github.event.repository.name }}\tools\*.ps1"
+      - name: Zip build results
+        run: |
+          Compress-Archive -Path ./Publish/* -DestinationPath "C:\Program Files\ChocoPackages\${{ github.event.repository.name }}\tools\${{ github.event.repository.name }}-$(($env:GITHUB_REF -replace "refs/tags/prerelease-") + $("-pre")).zip" 
+      - name: Push chocolatey package
+        run: |
+          cd "C:\Program Files\ChocoPackages\${{ github.event.repository.name }}"
+          choco pack ${{ github.event.repository.name }}.nuspec
+          choco push -s ${{ secrets.chocoRepo }} -k ${{ secrets.chocoApiKey }} --force
+          
+  build_and_push_docker_image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:   
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    
+    - name: Log in to the Container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.nexusDockerUsername }}
+        password: ${{ secrets.nexusDockerPassword }}
+        
+    - name: create docker file
+      working-directory: ./src
+      run: | 
+        cat <<EOF >Dockerfile
+        FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
+        WORKDIR /app
+        EXPOSE 80
+        FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+        COPY ./ .
+        RUN ls -al
+        WORKDIR "/src/."
+        RUN dotnet build "${{ env.SERVICE }}.csproj" -c Release -o /app/build
+        FROM build AS publish
+        RUN dotnet publish "${{ env.SERVICE }}.csproj" -c Release -o /app/publish
+        FROM base AS final
+        WORKDIR /app
+        COPY --from=publish /app/publish .
+        ENTRYPOINT [ "sh", "-c", "dotnet ${{ env.SERVICE }}.dll" ]
+        EOF
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v2
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.SERVICE }}
+        flavor: |
+          latest=false
+        tags: |
+          type=ref,event=tag
+                
+    - name: Build and push Docker image
+     
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        build-args: |
+          SERVICE=${{ env.SERVICE }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        file: ./src/Dockerfile
+        
+  build_and_publish_deb:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.100
+
+      - name: Prepare environemt variables
+        run: |
+          echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
+          echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+          echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+          echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
+          echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+      - name: Build service
+        run: 'dotnet publish --configuration Release --output Publish/opt/hector/${{ env.NAME }} -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
+
+      - name: Create unit file path
+        run: mkdir -p Publish/etc/systemd/system/
+
+      - name: Build unit file
+        run: |
+          cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
+          [Unit]
+          Description=Hector ${{ env.NAME }}
+          After=network-online.target
+          Requires=network-online.target
+          
+          [Install]
+          WantedBy=multi-user.target
+          
+          [Service]
+          EnvironmentFile=/etc/serviceEnvironment
+          WorkingDirectory=/opt/hector/${{ env.NAME }}
+          ExecStart=/opt/hector/${{ env.NAME }}/${{ env.NAME }}
+          TimeoutStopSec=1
+          Restart=always
+          RestartSec=5
+          
+          # Output to syslog
+          StandardOutput=syslog
+          StandardError=syslog
+          SyslogIdentifier=${{ env.NAME }}.service
+          EOF
+      - name: Create postinstall script
+        run: |
+          mkdir -p Publish/DEBIAN
+          cat << EOF > Publish/DEBIAN/postinst
+          #!/bin/sh
+          # stop service
+          service ${{ env.NAME }} stop
+          systemctl disable ${{ env.NAME }}.service
+          
+          # setup service
+          systemctl daemon-reload
+          systemctl enable ${{ env.NAME }}.service
+          service ${{ env.NAME }} start
+          EOF
+          chmod 755 Publish/DEBIAN/postinst
+      - name: build-deb-action
+        id: package
+        uses: jiro4989/build-deb-action@v2
+        with:
+          # Package name of debian package.
+          package: ${{ env.NAME }}
+          # Directory of release files.
+          package_root: ./Publish
+          # Package maintainer name.
+          maintainer: "Hectors-Welt GmbH"
+          # Package version.
+          version: ${{ env.VERSION }}
+          # Package architecture.
+          arch: all
+
+      - name: push deb package to nexus apt repo
+        run: |
+          curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoHost  }}"
