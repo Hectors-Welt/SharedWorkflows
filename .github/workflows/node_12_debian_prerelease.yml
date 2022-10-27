@@ -33,7 +33,7 @@ jobs:
         echo NAME=$(echo ClubAppService) >> $GITHUB_ENV
     - name: Build service
       run: |
-        sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
+        sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}-pre",' ./package.json
         npm install
         npm run build
         npm run package
@@ -93,10 +93,10 @@ jobs:
         # Package maintainer name.
         maintainer: "Hectors-Welt GmbH"
         # Package version.
-        version: ${{ env.VERSION }}
+        version: ${{ env.VERSION }}-pre
         # Package architecture.
         arch: all
 
     - name: push deb package to nexus apt repo
       run: |
-        curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}-pre" "${{ secrets.nexusAptRepoHost  }}"
+        curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoHost  }}"
