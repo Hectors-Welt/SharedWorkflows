@@ -182,7 +182,7 @@ jobs:
         
     - name: Zip build results
       working-directory: Publish/opt/hector/
-      run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip . 
+      run: zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip . 
       
     - name: copy file via ssh password
       uses: appleboy/scp-action@master
