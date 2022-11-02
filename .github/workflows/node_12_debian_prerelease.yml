@@ -9,6 +9,14 @@ on:
         required: true
       nexusAptRepoHost:
         required: true
+      packageRepoHost:
+        required: true
+      packageRepoUsername:
+        required: true
+      packageRepoPassword:
+        required: true
+      packageRepoPort:
+        required: true
         
 jobs:
   build_and_publish_deb:
