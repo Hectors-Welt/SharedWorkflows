@@ -178,6 +178,11 @@ jobs:
         service ${{ env.NAME }} start
         EOF
         chmod 755 Publish/DEBIAN/postinst
+        
+    - name: Zip build results
+      working-directory: Publish/opt/hector/
+      run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip . 
+      
     - name: copy file via ssh password
       uses: appleboy/scp-action@master
       with:
@@ -185,6 +190,6 @@ jobs:
         username: ${{ secrets.packageRepoUsername }}
         password: ${{ secrets.PackageRepoPassword }}
         port: ${{ secrets.packageRepoPort}}
-        source: ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip
+        source: ./src/Publish/opt/hector/${{ env.NAME}}-${{ env.VERSION }}.zip
         target: prerelease/${{ env.NAME }}
         strip_components: 3
