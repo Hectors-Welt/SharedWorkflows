@@ -109,7 +109,7 @@ jobs:
       run: |
         curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoHost  }}"
   build_and_publish_zip:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     
     steps:
     - name: Checkout sources
@@ -130,59 +130,14 @@ jobs:
         
     - name: Build service
       run: |
-        sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}.${{env.RUN_NUMBER}}",' ./package.json
+        Get-Content -path ./package.json -Raw -replace 'serviceVersion','${{env.VERSION}}.${{env.RUN_NUMBER}}'
         npm install
         npm run build
         npm run package
-        mkdir -p Publish/opt/hector/${{ env.NAME }}
-        mv build/* Publish/opt/hector/${{ env.NAME }}
-    - name: Create unit file path
-      run: mkdir -p Publish/etc/systemd/system/
-
-    - name: Build unit file
-      run: |
-        cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
-        [Unit]
-        Description=Hector ${{ env.NAME }}
-        After=network-online.target
-        Requires=network-online.target
-        
-        [Install]
-        WantedBy=multi-user.target
-        
-        [Service]
-        EnvironmentFile=/etc/serviceEnvironment
-        WorkingDirectory=/opt/hector/${{ env.NAME }}
-        ExecStart=/opt/hector/${{ env.NAME }}/${{ env.NAME }}
-        TimeoutStopSec=1
-        Restart=always
-        RestartSec=5
-        
-        # Output to syslog
-        StandardOutput=syslog
-        StandardError=syslog
-        SyslogIdentifier=${{ env.NAME }}.service
-        EOF
-  
-    - name: Create postinstall script
-      run: |
-        mkdir -p Publish/DEBIAN
-        cat << EOF > Publish/DEBIAN/postinst
-        #!/bin/sh
-        # stop service
-        service ${{ env.NAME }} stop
-        systemctl disable ${{ env.NAME }}.service
-        
-        # setup service
-        systemctl daemon-reload
-        systemctl enable ${{ env.NAME }}.service
-        service ${{ env.NAME }} start
-        EOF
-        chmod 755 Publish/DEBIAN/postinst
         
     - name: Zip build results
-      working-directory: Publish/opt/hector/
-      run: ls -a; cd ${{env.NAME}}; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip . 
+      working-directory: ./build
+      run: ls -a;  zip -r ${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip . 
       
     - name: copy file via ssh password
       uses: appleboy/scp-action@master
@@ -191,6 +146,6 @@ jobs:
         username: ${{ secrets.packageRepoUsername }}
         password: ${{ secrets.PackageRepoPassword }}
         port: ${{ secrets.packageRepoPort}}
-        source: ./src/Publish/opt/hector/${{env.NAME}}/${{ env.NAME}}-${{ env.VERSION }}.zip
+        source: ./src/Publish/opt/hector/${{env.NAME}}/${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip
         target: prerelease/${{ env.NAME }}
         strip_components: 3
