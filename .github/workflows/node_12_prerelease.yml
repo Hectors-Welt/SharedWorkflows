@@ -130,7 +130,7 @@ jobs:
         
     - name: Build service
       run: |
-        Get-Content -path ./package.json -Raw -replace 'serviceVersion','${{env.VERSION}}.${{env.RUN_NUMBER}}'
+        (Get-Content package.json) -replace 'serviceVersion','${{env.VERSION}}.${{env.RUN_NUMBER}}'
         npm install
         npm run build
         npm run package
