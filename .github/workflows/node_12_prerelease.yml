@@ -54,7 +54,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: project-zip
-        path: build\ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip")
+        path: build\ClubAppService-3.60.0.213.zip
  
   publish_zip:
     needs: build_zip
