@@ -140,7 +140,12 @@ jobs:
       run: Compress-Archive -Path ./*  -DestinationPath ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip  
       
     - name: setup SSH connection
-      run: |
-       Install-Module -Name Posh-SSH -Force
-       Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force -Verbose
-       Set-SCPItem -ComputerName ${{ secrets.packageRepoHost }} -Credential ${{ secrets.packageRepoUsername }} -Path ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip -Destination /prerelease/${{ env.NAME }} -Verbose
+      run: Install-Module -Name Posh-SSH -Force
+
+    - name: Setup execution policy
+      run:  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force -Verbose
+
+    - name: Push zip to repo
+      run: Set-SCPItem -ComputerName ${{ secrets.packageRepoHost }} -Credential ${{ secrets.packageRepoUsername }} -Path ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip -Destination /prerelease/${{ env.NAME }} -Verbose
+
+      
