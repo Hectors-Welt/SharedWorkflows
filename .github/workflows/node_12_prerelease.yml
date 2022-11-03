@@ -48,13 +48,20 @@ jobs:
         
     - name: Zip build results
       working-directory: ./build
-      run: Compress-Archive -Path ./*  -DestinationPath ./ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip") 
+      run: Compress-Archive -Path ./*  -DestinationPath ./ClubAppService- 
+    
+    - name: Save path as env variable
+      run: |
+       chcp 65001 #set code page to utf-8
+       echo ("ZIP_FILE=" + $(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip") >> $env:GITHUB_ENV
+       echo "${{ ZIP_FILE }}"
+       echo $env:ZIP_FILE
    
     - name: Upload zip
       uses: actions/upload-artifact@v3
       with:
         name: project-zip
-        path: build\ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip") 
+        path: build\ClubAppService-${{env.ZIP_FILE}}
  
   publish_zip:
     needs: build_zip
