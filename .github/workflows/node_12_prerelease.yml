@@ -39,23 +39,30 @@ jobs:
         echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $env:GITHUB_ENV
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $env:GITHUB_ENV
         echo NAME=$(echo ClubAppService) >> $env:GITHUB_ENV
-        
+       
+    - name: Set Env Variables 
+      run: |
+        $Env:file_name="$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(221)+ ".zip")"
+        echo $Env:file_name   
+       
     - name: Build service
       run: |
         (Get-Content package.json) -replace 'serviceVersion','${{env.VERSION}}'
         npm install
         npm run build
         npm run package
+        
+  
 
     - name: Zip build results
       working-directory: ./build
-      run: Compress-Archive -Path ./*  -DestinationPath ./ClubAppService-${{ env.VERSION }}.zip
+      run: Compress-Archive -Path ./*  -DestinationPath ./ClubAppService-$Env:file_name
    
     - name: Upload zip
       uses: actions/upload-artifact@v3
       with:
         name: project-zip
-        path: build\ClubAppService-${{ env.NAME }}.${{env.VERSION}}.zip
+        path: build\ClubAppService-$Env:file_name.zip
  
   publish_zip:
     needs: build_zip
