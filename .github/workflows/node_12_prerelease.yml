@@ -58,7 +58,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: project-zip
-        path: ~/build/ClubAppService-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
+        path: ~/build/ClubAppService-3.60.0.209.zip
  
   publish_zip:
     needs: build_zip
