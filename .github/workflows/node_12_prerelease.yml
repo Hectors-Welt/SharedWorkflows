@@ -38,6 +38,7 @@ jobs:
         echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
         echo NAME=$(echo ClubAppService) >> $GITHUB_ENV
+        echo "FILE_NAME=$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip")" >> $GITHUB_ENV
         
     - name: Build service
       run: |
@@ -48,20 +49,13 @@ jobs:
         
     - name: Zip build results
       working-directory: ./build
-      run: Compress-Archive -Path ./*  -DestinationPath ./ClubAppService- 
-    
-    - name: Save path as env variable
-      run: |
-       chcp 65001 #set code page to utf-8
-       echo ("ZIP_FILE=" + $(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip") >> $env:GITHUB_ENV
-       echo "${{ ZIP_FILE }}"
-       echo $env:ZIP_FILE
+      run: Compress-Archive -Path ./*  -DestinationPath ./ClubAppService-${{env.FILE_NAME}} 
    
     - name: Upload zip
       uses: actions/upload-artifact@v3
       with:
         name: project-zip
-        path: build\ClubAppService-${{env.ZIP_FILE}}
+        path: build\ClubAppService-${{env.FILE_NAME}}
  
   publish_zip:
     needs: build_zip
