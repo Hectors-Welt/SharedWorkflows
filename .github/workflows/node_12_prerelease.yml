@@ -57,6 +57,7 @@ jobs:
         path: ./ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip") 
  
   publish_zip:
+    needs: build_zip
     runs-on: ubuntu-latest
   
     steps:
