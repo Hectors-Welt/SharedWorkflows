@@ -48,7 +48,7 @@ jobs:
         
     - name: Zip build results
       working-directory: ./build
-      run: Compress-Archive -Path ./*  -DestinationPath ./${{ github.event.repository.name }}-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+ "." + ${{github.run_number}}.zip) 
+      run: Compress-Archive -Path ./*  -DestinationPath ./${{ github.event.repository.name }}-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}}.zip)) 
   
     - name: setup SSH connection
       run: Install-Module -Name Posh-SSH -Force
