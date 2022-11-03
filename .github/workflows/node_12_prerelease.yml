@@ -138,7 +138,7 @@ jobs:
     - name: Zip build results
       working-directory: ./build
       run: Compress-Archive -Path ./*  -DestinationPath ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip  
-      
+  
     - name: setup SSH connection
       run: Install-Module -Name Posh-SSH -Force
 
@@ -146,6 +146,6 @@ jobs:
       run:  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force -Verbose
 
     - name: Push zip to repo
-      run: Set-SCPItem -ComputerName ${{ secrets.packageRepoHost }} -Credential ${{ secrets.packageRepoUsername }} -Path ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip -Destination /prerelease/${{ env.NAME }} -Verbose
+      run: Set-SCPItem -ComputerName ${{ secrets.packageRepoHost }} -Credential ${{ secrets.packageRepoUsername }} -Path ./${{ github.event.repository.name }}-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+ "." + $($env:GITHUB_ENV_RUN_NUMBER)).zip" -Destination /prerelease/${{ env.NAME }} -Verbose
 
       
