@@ -35,7 +35,7 @@ jobs:
       run: |
         chcp 65001 #set code page to utf-8
         echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $env:GITHUB_ENV
-        echo VERSION=$(echo $env:GITHUB_REF -replace "refs/tags/prerelease-") >> $env:GITHUB_ENV
+        echo VERSION=$(($env:GITHUB_REF -replace "refs/tags/prerelease-")  >> $env:GITHUB_ENV
         echo RUN_NUMBER=$(echo ${{github.run_number}}) >> $env:GITHUB_ENV
         echo TAG_NAME=$(echo ${{github.ref_name}}) >> $env:GITHUB_ENV
         echo NAME=$(echo ClubAppService) >> $env:GITHUB_ENV
