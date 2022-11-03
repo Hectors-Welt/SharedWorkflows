@@ -57,7 +57,7 @@ jobs:
 
     - name: Zip build results
       working-directory: ./build
-      run: Compress-Archive -Path ./*  -DestinationPath ("./${{env.NAME}}-3.60.0.${{env.RUN_NUMBER}}.zip)
+      run: Compress-Archive -Path ./*  -DestinationPath (./${{env.NAME}}-3.60.0.${{env.RUN_NUMBER}}.zip)
    
     - name: Upload zip
       uses: actions/upload-artifact@v3
