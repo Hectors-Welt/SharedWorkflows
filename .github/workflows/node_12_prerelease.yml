@@ -19,7 +19,7 @@ on:
         required: true
         
 jobs:
-  build_and_publish_zip:
+  build_zip:
     runs-on: windows-latest
     
     steps:
@@ -50,15 +50,28 @@ jobs:
       working-directory: ./build
       run: Compress-Archive -Path ./*  -DestinationPath ./ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip") 
   
-    - name: setup SSH connection
-      run: Install-Module -Name Posh-SSH -Force
-
-    - name: Setup execution policy
-      run:  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force -Verbose
-
-    - name: Create SSH connection
-      run: New-SSHSession -ComputerName ${{secrets.packageRepoHost}} -Port ${{secrets.packageRepoPort}} -Credential ${{secrets.packageRepoUsername}}
-    
-    - name: Push zip to repo
-      run: Invoke-SSHCommand "scp ./ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}}) + ".zip") ${{secrets.packageRepoUsername}}@${{secrets.packageRepoHost}}:/prerelease/ClubAppService" -SessionId 0
-      
+    - name: Upload zip
+      uses: actions/upload-artifact@v3
+      with:
+        name: project-zip
+        path: ./ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip") 
+ 
+  publish_zip:
+    runs-on: ubuntu-latest
+  
+    steps:
+    - name: Download a single artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: project-zip
+        
+    - name: copy file via ssh password
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.packageRepoHost }}
+        username: ${{ secrets.packageRepoUsername }}
+        password: ${{ secrets.PackageRepoPassword }}
+        port: ${{ secrets.packageRepoPort}}
+        source: ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip
+        target: prerelease/${{ env.NAME }}
+        strip_components: 3
