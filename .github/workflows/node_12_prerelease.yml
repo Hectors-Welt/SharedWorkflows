@@ -139,13 +139,8 @@ jobs:
       working-directory: ./build
       run: Compress-Archive -Path ./*  -DestinationPath ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip  
       
-    - name: copy file via ssh password
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.packageRepoHost }}
-        username: ${{ secrets.packageRepoUsername }}
-        password: ${{ secrets.PackageRepoPassword }}
-        port: ${{ secrets.packageRepoPort}}
-        source: ./build/${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip
-        target: prerelease/${{ env.NAME }}
-        strip_components: 3
+    - name: setup SSH connection
+      run: |
+       Install-Module -Name Posh-SSH
+       Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force -Verbose
+       Set-SCPItem -ComputerName ${{ env.packageRepoHost }} -Credential ${{ secrets.packageRepoUsername }} -Path ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip -Destination /prerelease/${{ env.NAME }} -Verbose
