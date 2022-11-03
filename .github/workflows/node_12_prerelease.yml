@@ -143,4 +143,4 @@ jobs:
       run: |
        Install-Module -Name Posh-SSH -Force
        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force -Verbose
-       Set-SCPItem -ComputerName ${{ env.packageRepoHost }} -Credential ${{ secrets.packageRepoUsername }} -Path ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip -Destination /prerelease/${{ env.NAME }} -Verbose
+       Set-SCPItem -ComputerName ${{ secrets.packageRepoHost }} -Credential ${{ secrets.packageRepoUsername }} -Path ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip -Destination /prerelease/${{ env.NAME }} -Verbose
