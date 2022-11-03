@@ -57,7 +57,7 @@ jobs:
       run:  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force -Verbose
 
     - name: Create SSH connection
-      run: New-SSHSession -ComputerName ${{secrets.packageRepoHost}} -Port ${{secrets.packageRepoPort}} 
+      run: New-SSHSession -ComputerName ${{secrets.packageRepoHost}} -Port ${{secrets.packageRepoPort}} -Credential ${{secrets.packageRepoUsername}}
     
     - name: Push zip to repo
       run: Invoke-SSHCommand "scp ./ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}}) + ".zip") ${{secrets.packageRepoUsername}}@${{secrets.packageRepoHost}}:/prerelease/ClubAppService" -SessionId 0
