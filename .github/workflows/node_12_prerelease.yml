@@ -19,27 +19,6 @@ on:
         required: true
         
 jobs:
-name: Create debian package
-
-on:
-  workflow_call:
-    secrets:
-      nexusAptRepoUsername:
-        required: true
-      nexusAptRepoPassword:
-        required: true
-      nexusAptRepoHost:
-        required: true
-      packageRepoHost:
-        required: true
-      packageRepoUsername:
-        required: true
-      packageRepoPassword:
-        required: true
-      packageRepoPort:
-        required: true
-        
-jobs:
   build_and_publish_zip:
     runs-on: windows-latest
     
