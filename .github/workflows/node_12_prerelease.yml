@@ -49,13 +49,16 @@ jobs:
     - name: Zip build results
       working-directory: ./build
       run: Compress-Archive -Path ./*  -DestinationPath ./ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip") 
+   
+    - name: debug files
+      working-directory: ./build
+      run: ls 
   
-    
     - name: Upload zip
       uses: actions/upload-artifact@v3
       with:
         name: project-zip
-        path: ./build/ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip") 
+        path: ~/build/ClubAppService-$(($env:GITHUB_REF -replace "refs/tags/prerelease-")+"."+(${{github.run_number}})+ ".zip") 
  
   publish_zip:
     needs: build_zip
