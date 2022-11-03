@@ -54,7 +54,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: project-zip
-        path: build\ClubAppService-3.60.0.214.zip
+        path: build\ClubAppService-3.60.0.215.zip
  
   publish_zip:
     needs: build_zip
@@ -81,6 +81,6 @@ jobs:
         username: ${{ secrets.packageRepoUsername }}
         password: ${{ secrets.PackageRepoPassword }}
         port: ${{ secrets.packageRepoPort}}
-        source: ./${{ env.NAME}}-${{ env.VERSION }}.${{env.RUN_NUMBER}}.zip
+        source: ./${{ env.NAME}}-${{ env.VERSION }}.zip
         target: prerelease/${{ env.NAME }}
         strip_components: 3
