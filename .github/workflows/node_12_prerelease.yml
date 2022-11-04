@@ -146,6 +146,7 @@ jobs:
       with:
         name: project-zip
         path: build/${{env.NAME}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
+        retention-days: 1
   publish_zip:
     needs: build_zip
     runs-on: ubuntu-latest
