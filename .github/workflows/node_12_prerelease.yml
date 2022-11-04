@@ -83,5 +83,5 @@ jobs:
         port: ${{ secrets.packageRepoPort}}
         source: ${{ env.NAME }}-${{ env.VERSION }}.zip
         target: prerelease/${{ env.NAME }}
-        timeout: 30000
-        command_timeout: 30000
+        timeout: 3000s
+        command_timeout: 30m
