@@ -130,10 +130,18 @@ jobs:
         echo TAG_NAME=$(echo ${{github.ref_name}}) >> $env:GITHUB_ENV
         echo NAME=$(echo ClubAppService) >> $env:GITHUB_ENV
        
+    - name: get version
+      id: version
+      uses: notiz-dev/github-action-json-property@release
+      with: 
+          path: 'package.json'
+          prop_path: 'version'
+      run: echo ${{steps.version.outputs.prop}}  
+    
     - name: Build service
       run: |
-        (Get-Content package.json) -replace 'serviceVersion','${{env.VERSION}}'
         npm install
+        (Get-Content package.json) -replace '${{steps.version.outputs.prop}}','${{env.VERSION}}' | Set-Content package.json
         npm run build
         npm run package
 
