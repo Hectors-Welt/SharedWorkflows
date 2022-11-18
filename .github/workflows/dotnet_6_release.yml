@@ -55,7 +55,7 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
       - name: Build
-        run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
+        run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained false /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
 
       - name: Zip build results
         run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .
@@ -99,7 +99,7 @@ jobs:
           echo TAG_NAME=$(echo ${{github.ref_name}}) >> $env:GITHUB_ENV
           echo NAME=$(echo ClubAppService) >> $env:GITHUB_ENV
       - name: Build
-        run: 'dotnet publish ${{github.event.repository.name}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
+        run: 'dotnet publish ${{github.event.repository.name}}.csproj --configuration Release --output Publish -r win-x64 --self-contained false /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
 
       - name: Create chocolatey package
         run: |
@@ -196,7 +196,7 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
       - name: Build service
-        run: 'dotnet publish ./src/${{env.NAME}}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }} -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
+        run: 'dotnet publish ./src/${{env.NAME}}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }} -r linux-x64 --self-contained false /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
 
       - name: Create unit file path
         run: mkdir -p Publish/etc/systemd/system/
