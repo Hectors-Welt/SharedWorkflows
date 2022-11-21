@@ -27,12 +27,6 @@ on:
         required: true
       chocoApiKey:
         required: true
-      hangfireFeedUrl:
-        required: true
-      hangfireUsername:
-        required: true
-      hangfirePassword:
-        required: true
       
       
 env:
@@ -66,7 +60,7 @@ jobs:
         
     - name: add private feed
       run: |
-        dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
+        dotnet nuget add source ${{ secrets.HANGFIRE_FEED_URL }} --name hangfirePro --username ${{ secrets.HANGFIRE_USERNAME }} --password ${{ secrets.HANGFIRE_PASSWORD }} --store-password-in-clear-text
         dotnet restore
                 
     - name: Build
