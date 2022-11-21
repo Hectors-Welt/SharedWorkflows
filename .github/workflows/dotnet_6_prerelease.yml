@@ -27,6 +27,12 @@ on:
         required: true
       chocoApiKey:
         required: true
+      hangfireFeedUrl:
+        required: true
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true
       
       
 env:
@@ -58,8 +64,10 @@ jobs:
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
         echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
         
-    - name: restore
-      run: dotnet restore
+    - name: add private feed
+      run: |
+        dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }}
+        dotnet restore
                 
     - name: Build
       run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
