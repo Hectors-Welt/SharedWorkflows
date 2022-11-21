@@ -27,6 +27,12 @@ on:
         required: true
       chocoApiKey:
         required: true
+      hangfireFeedUrl:
+        required: true  
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true
  
 env:
   REGISTRY: ${{ secrets.dockerRepo }}
@@ -54,6 +60,12 @@ jobs:
           echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+          
+      - name: add private feed
+        run: |
+          dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
+          dotnet restore
+      
       - name: Build
         run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
 
@@ -98,6 +110,12 @@ jobs:
           echo RUN_NUMBER=$(echo ${{github.run_number}}) >> $env:GITHUB_ENV
           echo TAG_NAME=$(echo ${{github.ref_name}}) >> $env:GITHUB_ENV
           echo NAME=$(echo ClubAppService) >> $env:GITHUB_ENV
+          
+      - name: add private feed
+        run: |
+          dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
+          dotnet restore
+          
       - name: Build
         run: 'dotnet publish ${{github.event.repository.name}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
 
@@ -143,6 +161,10 @@ jobs:
         FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
         COPY ./ .
         RUN ls -al
+        WORKDIR "/src/."
+        RUN dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
+        WORKDIR "/src/."
+        RUN dotnet restore
         WORKDIR "/src/."
         RUN dotnet build "${{ env.SERVICE }}.csproj" -c Release -o /app/build
         FROM build AS publish
@@ -195,6 +217,12 @@ jobs:
           echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+          
+      - name: add private feed
+        run: |
+          dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
+          dotnet restore
+          
       - name: Build service
         run: 'dotnet publish ./src/${{env.NAME}}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }} -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
 
