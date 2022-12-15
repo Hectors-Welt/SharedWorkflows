@@ -101,13 +101,13 @@ jobs:
         # Package maintainer name.
         maintainer: "Hectors-Welt GmbH"
         # Package version.
-        version: ${{ env.VERSION }}-pre
+        version: ${{ env.VERSION }}
         # Package architecture.
         arch: all
 
     - name: push deb package to nexus apt repo
       run: |
-        curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoHost  }}"
+        curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoHost }}"
 
   build_zip:
     runs-on: windows-latest
