@@ -210,7 +210,7 @@ jobs:
         with:
           dotnet-version: 6.0.100
 
-      - name: Prepare environemt variables
+      - name: Prepare environment variables
         run: |
           echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
           echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
