@@ -27,6 +27,12 @@ on:
         required: true
       hangfirePassword:
         required: true
+      chocoRepo:
+        required: true
+      chocoApiKey:
+        required: true
+      dockerRepo:
+        required: true
  
 env:
   REGISTRY: ${{ secrets.dockerRepo }}
