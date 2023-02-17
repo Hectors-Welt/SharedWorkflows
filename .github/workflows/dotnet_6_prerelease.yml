@@ -72,7 +72,7 @@ jobs:
     
     - name: add github feed
       run: |
-          dotnet nuget add source ${{ secrets.nugetGithubHost }} --name hangfirePro --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
+          dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
           dotnet restore
         
     - name: add private feed
@@ -120,7 +120,7 @@ jobs:
      
       - name: add github feed
         run: |
-          dotnet nuget add source ${{ secrets.nugetGithubHost }} --name hangfirePro --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
+          dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
           dotnet restore
           
       - name: add private feed
