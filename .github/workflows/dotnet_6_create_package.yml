@@ -9,7 +9,7 @@ on:
         required: true
       nugetGithubPassword:
         required: true
-      githubToken:
+      nugetGithubToken:
         required: true
         
 jobs:
@@ -27,8 +27,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 6.0.100
-      env:
-        NUGET_AUTH_TOKEN: ${{ secrets.githubToken }}
 
     - name: Get the tag  name
       id: get_tag_name
@@ -60,4 +58,4 @@ jobs:
       run: 'dotnet pack -c Release /p:Version=${{ steps.get_version.outputs.VERSION }}'
     
     - name: Publish Nuget Package
-      run: dotnet nuget push ./bin/Release/*.nupkg -s ${{ secrets.nugetGithubHost }} --skip-duplicate --no-symbols true
+      run: dotnet nuget push ./bin/Release/*.nupkg -s ${{ secrets.nugetGithubHost }} -k ${{ secrets.nugetGithubToken }} --skip-duplicate --no-symbols true
