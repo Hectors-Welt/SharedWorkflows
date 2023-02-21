@@ -3,12 +3,6 @@ name: Create v6 dotnet package
 on:
   workflow_call:
     secrets:
-      hangfireFeedUrl:
-        required: true  
-      hangfireUsername:
-        required: true
-      hangfirePassword:
-        required: true
       nugetGithubHost:
         required: true
       nugetGithubUsername:
@@ -56,7 +50,6 @@ jobs:
     - name: add feeds
       run: |
         dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
-        dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
         dotnet restore
         
     - name: Create NuGet Package
