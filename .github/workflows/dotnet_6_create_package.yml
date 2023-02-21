@@ -15,8 +15,6 @@ on:
         required: true
       nugetGithubPassword:
         required: true
-      githubToken:
-        required: true
         
 jobs:
   build:
@@ -33,9 +31,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 6.0.100
-        source-url: https://nuget.pkg.github.com/Hectors-Welt/index.json
-      env:
-        NUGET_AUTH_TOKEN: ${{secrets.githubToken}}
 
     - name: Get the tag release name
       id: get_tag_name
