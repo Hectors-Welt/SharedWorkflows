@@ -56,4 +56,4 @@ jobs:
       run: 'dotnet pack -c Release /p:Version=${{ steps.get_version.outputs.VERSION }}'
     
     - name: Publish Nuget Package
-      run: dotnet nuget push ./bin/Release/*.nupkg --skip-duplicate --no-symbols true
+      run: dotnet nuget push ./bin/Release/*.nupkg -s ${{ secrets.nugetGithubHost }} --skip-duplicate --no-symbols true
