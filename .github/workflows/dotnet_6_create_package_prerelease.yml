@@ -19,47 +19,48 @@ on:
         required: true
         
 jobs:
+  build:
     runs-on: ubuntu-latest
     defaults:
-      run:
-        working-directory: ./src
+        run:
+          working-directory: ./src
 
     steps:
-    - name: Checkout sources
-      uses: actions/checkout@v2
+      - name: Checkout sources
+        uses: actions/checkout@v2
 
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 6.0.100
-        source-url: https://nuget.pkg.github.com/Hectors-Welt/index.json
-      env:
-        NUGET_AUTH_TOKEN: ${{secrets.githubToken}}
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.100
+          source-url: https://nuget.pkg.github.com/Hectors-Welt/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.githubToken}}
 
-    - name: Get the tag name
-      id: get_tag_name
-      run: echo ::set-output name=TAG_NAME::${GITHUB_REF/refs\/tags\/} 
+      - name: Get the tag name
+        id: get_tag_name
+        run: echo ::set-output name=TAG_NAME::${GITHUB_REF/refs\/tags\/} 
 
-    - name: Get the base version
-      id: get_base_version
-      run: echo ::set-output name=BASE_VERSION::${GITHUB_REF/refs\/tags\/v/} 
+      - name: Get the base version
+        id: get_base_version
+        run: echo ::set-output name=BASE_VERSION::${GITHUB_REF/refs\/tags\/prerelease-/} 
 
-    - name: Get the version
-      id: get_version
-      run: echo ::set-output name=VERSION::${{ steps.get_base_version.outputs.BASE_VERSION }}.$GITHUB_RUN_NUMBER    
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${{ steps.get_base_version.outputs.BASE_VERSION }}.$GITHUB_RUN_NUMBER    
 
-    - name: Get the repo name
-      id: get_repo_name
-      run: echo ::set-output name=NAME::$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}')
+      - name: Get the repo name
+        id: get_repo_name
+        run: echo ::set-output name=NAME::$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}')
 
-    - name: add feeds
-      run: |
-        dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
-        dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
-        dotnet restore
-        
-    - name: Create NuGet Package
-      run: 'dotnet pack -c Release /p:Version=${{ steps.get_version.outputs.VERSION }}'
-    
-    - name: Publish Nuget Package
-      run: dotnet nuget push ./bin/Release/*.nupkg --skip-duplicate --no-symbols true
+      - name: add feeds
+        run: |
+          dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
+          dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
+          dotnet restore
+
+      - name: Create NuGet Package
+        run: 'dotnet pack -c Release /p:Version=${{ steps.get_version.outputs.VERSION }}'
+
+      - name: Publish Nuget Package
+        run: dotnet nuget push ./bin/Release/*.nupkg --skip-duplicate --no-symbols true
