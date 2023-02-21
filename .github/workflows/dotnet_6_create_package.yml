@@ -35,7 +35,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/v')
       run: echo ::set-output name=BASE_VERSION::${GITHUB_REF/refs\/tags\/v/}
       
-    - name:  Get the tag prerelease name 
+    - name: Get the tag prerelease name 
       if: startsWith(github.ref, 'refs/tags/prerelease-')
       run: echo ::set-output name=BASE_VERSION::${GITHUB_REF/refs\/tags\/prerelease-/}
 
@@ -47,7 +47,7 @@ jobs:
       id: get_repo_name
       run: echo ::set-output name=NAME::$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}')
 
-    - name: add feeds
+    - name: Add feeds
       run: |
         dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
         dotnet restore
