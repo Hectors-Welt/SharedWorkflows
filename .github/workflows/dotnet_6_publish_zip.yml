@@ -1,0 +1,97 @@
+name: Create v6 publish zip
+
+on:
+  workflow_call:
+    secrets:
+      packageRepoHost: 
+        required: true
+      packageRepoPassword:
+        required: true
+      packageRepoUsername:
+        required: true
+      packageRepoPort:
+        required: true
+      hangfireFeedUrl:
+        required: true  
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true  
+      nugetGithubHost:
+        required: true
+      nugetGithubUsername:
+        required: true
+      nugetGithubPassword:
+        required: true
+ 
+env:
+  SERVICE: ${{ github.event.repository.name }}
+        
+jobs:
+   build_and_publish_zip:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src
+    
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.100
+
+      - name: Prepare environment variables
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
+          echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+          echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
+          echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+
+      - name: Prepare environment variables
+        if: startsWith(github.ref, 'refs/tags/prerelease-')
+        run: |
+          echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
+          echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+          echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+          echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
+          echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+          
+      - name: add feeds
+        run: |
+          dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
+          dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
+          dotnet restore
+      
+      - name: Build
+        run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
+
+      - name: Zip build results
+        run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .
+
+      - name: copy file via ssh password
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.packageRepoHost }}
+          username: ${{ secrets.packageRepoUsername }}
+          password: ${{ secrets.packageRepoPassword }}
+          port: ${{ secrets.packageRepoPort }}
+          source: ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip
+          target: release/${{ env.NAME }}
+          strip_components: 3
+  
+      - name: copy file via ssh password
+        if: startsWith(github.ref, 'refs/tags/prerelease-')
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.packageRepoHost }}
+          username: ${{ secrets.packageRepoUsername }}
+          password: ${{ secrets.PackageRepoPassword }}
+          port: ${{ secrets.packageRepoPort}}
+          source: ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip
+          target: prerelease/${{ env.NAME }}
+          strip_components: 3
