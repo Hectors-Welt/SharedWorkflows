@@ -11,6 +11,12 @@ on:
         required: true
       nugetGithubToken:
         required: true
+      hangfireFeedUrl:
+        required: true  
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true  
         
 jobs:
   build:
