@@ -58,6 +58,7 @@ jobs:
     - name: Add feeds
       run: |
         dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
+        dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
         dotnet restore
         
     - name: Create NuGet Package
