@@ -155,13 +155,13 @@ jobs:
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
           # stop service
-          service ${{ env.NAME }} stop
-          systemctl disable ${{ env.NAME }}.service
+          service ${{ steps.service-name.outputs.lowercase }} stop
+          systemctl disable ${{ steps.service-name.outputs.lowercase }}.service
           
           # setup service
           systemctl daemon-reload
-          systemctl enable ${{ env.NAME }}.service
-          service ${{ env.NAME }} start
+          systemctl enable ${{ steps.service-name.outputs.lowercase }}.service
+          service ${{ steps.service-name.outputs.lowercase }} start
           EOF
           chmod 755 Publish/DEBIAN/postinst
       - name: build-deb-action
