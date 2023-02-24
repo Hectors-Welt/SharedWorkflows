@@ -123,16 +123,19 @@ jobs:
       - name: Create unit file path
         run: mkdir -p Publish/etc/systemd/system/
 
+      - name: Get service name to lower case
+        id: service-name
+        uses: Entepotenz/change-string-case-action@v1
+        with:
+          string: ${{ env.NAME }}
+
       - name: Build unit file
         run: |
-          cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
+          cat << EOF > Publish/etc/systemd/system/${{ steps.service-name.outputs.lowercase }}.service
           [Unit]
           Description=Hector ${{ env.NAME }}
           After=network-online.target
           Requires=network-online.target
-          
-          [Install]
-          WantedBy=multi-user.target
           
           [Service]
           EnvironmentFile=/etc/serviceEnvironment
@@ -142,10 +145,9 @@ jobs:
           Restart=always
           RestartSec=5
           
-          # Output to syslog
-          StandardOutput=syslog
-          StandardError=syslog
-          SyslogIdentifier=${{ env.NAME }}.service
+          [Install]
+          WantedBy=multi-user.target
+          
           EOF
       - name: Create postinstall script
         run: |
