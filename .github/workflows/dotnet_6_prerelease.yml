@@ -116,7 +116,7 @@ jobs:
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
       
       - name: Get service name to lower case
-      - id: service-name
+        id: service-name
         uses: Entepotenz/change-string-case-action@v1
         with:
           string: ${{ env.NAME }}
@@ -153,6 +153,7 @@ jobs:
           WantedBy=multi-user.target
           
           EOF
+          
       - name: Create postinstall script
         run: |
           mkdir -p Publish/DEBIAN
@@ -168,6 +169,7 @@ jobs:
           service ${{ env.NAME }} start
           EOF
           chmod 755 Publish/DEBIAN/postinst
+          
       - name: build-deb-action
         id: package
         uses: jiro4989/build-deb-action@v2
