@@ -114,6 +114,12 @@ jobs:
           echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+      
+      - name: Get service name to lower case
+      - id: service-name
+        uses: Entepotenz/change-string-case-action@v1
+        with:
+          string: ${{ env.NAME }}
      
       - name: add feeds
         run: |
@@ -129,14 +135,11 @@ jobs:
 
       - name: Build unit file
         run: |
-          cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
+          cat << EOF > Publish/etc/systemd/system/${{ steps.service-name.outputs.lowercase }}.service
           [Unit]
           Description=Hector ${{ env.NAME }}
           After=network-online.target
           Requires=network-online.target
-          
-          [Install]
-          WantedBy=multi-user.target
           
           [Service]
           EnvironmentFile=/etc/serviceEnvironment
@@ -146,10 +149,9 @@ jobs:
           Restart=always
           RestartSec=5
           
-          # Output to syslog
-          StandardOutput=syslog
-          StandardError=syslog
-          SyslogIdentifier=${{ env.NAME }}.service
+          [Install]
+          WantedBy=multi-user.target
+          
           EOF
       - name: Create postinstall script
         run: |
