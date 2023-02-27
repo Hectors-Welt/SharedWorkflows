@@ -110,8 +110,12 @@ jobs:
           echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
-          echo "SERVICENAME_LOWERCASE=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
+      - name: Get servicename to lowercase
+        id: toLowerCase
+        run: |
+          INPUT=${{ env.NAME }}
+          echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT    
           
       - name: add feeds
         run: |
@@ -133,7 +137,7 @@ jobs:
 
       - name: Build unit file
         run: |
-          cat << EOF > Publish/etc/systemd/system/${{ env.SERVICENAME_LOWERCASE }}.service
+          cat << EOF > Publish/etc/systemd/system/${{steps.toLowerCase.outputs.lowerCaseValue}}.service
           [Unit]
           Description=Hector ${{ env.NAME }}
           After=network-online.target
@@ -157,13 +161,13 @@ jobs:
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
           # stop service
-          service ${{ env.SERVICENAME_LOWERCASE }} stop
-          systemctl disable ${{ env.SERVICENAME_LOWERCASE }}.service
+          service ${{steps.toLowerCase.outputs.lowerCaseValue}} stop
+          systemctl disable ${{steps.toLowerCase.outputs.lowerCaseValue}}.service
           
           # setup service
           systemctl daemon-reload
-          systemctl enable ${{ env.SERVICENAME_LOWERCASE }}.service
-          service ${{ env.SERVICENAME_LOWERCASE }} start
+          systemctl enable ${{steps.toLowerCase.outputs.lowerCaseValue}}.service
+          service ${{steps.toLowerCase.outputs.lowerCaseValue}} start
           EOF
           chmod 755 Publish/DEBIAN/postinst
       - name: build-deb-action
