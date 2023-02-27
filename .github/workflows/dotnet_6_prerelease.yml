@@ -69,7 +69,6 @@ jobs:
         echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
         echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
-
         
     - name: add feeds
       run: |
@@ -114,9 +113,9 @@ jobs:
           echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
-          echo "SERVICENAME_LOWERCASE=${$NAME,,}" >>${GITHUB_ENV}
-
-      - id: toLowerCase
+          
+      - name: make service to lowercase
+        id: toLowerCase
         run: INPUT=${{ env.NAME }} echo "::set-output name=lowerCaseValue::${INPUT,,}"
          
       - name: debug servicename lowercase
