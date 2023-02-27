@@ -116,8 +116,10 @@ jobs:
           
       - name: make service to lowercase
         id: toLowerCase
-        run: INPUT=${{ env.NAME }} echo "::set-output name=lowerCaseValue::${INPUT,,}"
-         
+        run: |
+         INPUT=${{ env.NAME }}
+         echo "{lowerCaseValue}=${INPUT,,}" >> $GITHUB_OUTPUT
+          
       - name: debug servicename lowercase
         run: echo "${{steps.toLowerCase.outputs.lowerCaseValue}}"
       - name: add feeds
