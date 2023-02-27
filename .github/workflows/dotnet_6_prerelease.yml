@@ -116,7 +116,8 @@ jobs:
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
           echo "SERVICENAME_LOWERCASE=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
          
-     
+      - name: debug servicename lowercase
+        run: echo "${{env.SERVICENAME_LOWERCASE}}"
       - name: add feeds
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
