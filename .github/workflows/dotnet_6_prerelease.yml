@@ -115,9 +115,12 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
           echo "SERVICENAME_LOWERCASE=${$NAME,,}" >>${GITHUB_ENV}
+
+      - id: toLowerCase
+        run: INPUT=${{ env.NAME }} echo "::set-output name=lowerCaseValue::${INPUT,,}"
          
       - name: debug servicename lowercase
-        run: echo "${{env.SERVICENAME_LOWERCASE}}"
+        run: echo "${{steps.toLowerCase.outputs.lowerCaseValue}}"
       - name: add feeds
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
@@ -132,7 +135,7 @@ jobs:
 
       - name: Build unit file
         run: |
-          cat << EOF > Publish/etc/systemd/system/${{ env.SERVICENAME_LOWERCASE }}.service
+          cat << EOF > Publish/etc/systemd/system/${{steps.toLowerCase.outputs.lowerCaseValue}}.service
           [Unit]
           Description=Hector ${{ env.NAME }}
           After=network-online.target
@@ -157,13 +160,13 @@ jobs:
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
           # stop service
-          service ${{ env.SERVICENAME_LOWERCASE }} stop
-          systemctl disable $${{ env.SERVICENAME_LOWERCASE }}.service
+          service ${{steps.toLowerCase.outputs.lowerCaseValue}} stop
+          systemctl disable ${{steps.toLowerCase.outputs.lowerCaseValue}}.service
           
           # setup service
           systemctl daemon-reload
-          systemctl enable ${{ env.SERVICENAME_LOWERCASE }}.service
-          service ${{ env.SERVICENAME_LOWERCASE }} start
+          systemctl enable ${{steps.toLowerCase.outputs.lowerCaseValue}}.service
+          service ${{steps.toLowerCase.outputs.lowerCaseValue}} start
           EOF
           chmod 755 Publish/DEBIAN/postinst
           
