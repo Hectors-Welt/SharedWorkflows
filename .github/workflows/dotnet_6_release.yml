@@ -110,6 +110,8 @@ jobs:
           echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+          echo "SERVICENAME_LOWERCASE=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
           
       - name: add feeds
         run: |
@@ -131,7 +133,7 @@ jobs:
 
       - name: Build unit file
         run: |
-          cat << EOF > Publish/etc/systemd/system/${{ steps.service-name.outputs.lowercase }}.service
+          cat << EOF > Publish/etc/systemd/system/${{ env.SERVICENAME_LOWERCASE }}.service
           [Unit]
           Description=Hector ${{ env.NAME }}
           After=network-online.target
@@ -155,13 +157,13 @@ jobs:
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
           # stop service
-          service ${{ steps.service-name.outputs.lowercase }} stop
-          systemctl disable ${{ steps.service-name.outputs.lowercase }}.service
+          service ${{ env.SERVICENAME_LOWERCASE }} stop
+          systemctl disable ${{ env.SERVICENAME_LOWERCASE }}.service
           
           # setup service
           systemctl daemon-reload
-          systemctl enable ${{ steps.service-name.outputs.lowercase }}.service
-          service ${{ steps.service-name.outputs.lowercase }} start
+          systemctl enable ${{ env.SERVICENAME_LOWERCASE }}.service
+          service ${{ env.SERVICENAME_LOWERCASE }} start
           EOF
           chmod 755 Publish/DEBIAN/postinst
       - name: build-deb-action
