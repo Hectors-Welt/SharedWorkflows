@@ -58,9 +58,6 @@ jobs:
         After=network-online.target
         Requires=network-online.target
         
-        [Install]
-        WantedBy=multi-user.target
-        
         [Service]
         EnvironmentFile=/etc/serviceEnvironment
         WorkingDirectory=/opt/hector/${{ env.NAME }}
@@ -69,10 +66,9 @@ jobs:
         Restart=always
         RestartSec=5
         
-        # Output to syslog
-        StandardOutput=syslog
-        StandardError=syslog
-        SyslogIdentifier=${{ env.NAME }}.service
+        [Install]
+        WantedBy=multi-user.target
+        
         EOF
   
     - name: Create postinstall script
@@ -81,13 +77,13 @@ jobs:
         cat << EOF > Publish/DEBIAN/postinst
         #!/bin/sh
         # stop service
-        service ${{ env.NAME }} stop
+        systemctl stop ${{ env.NAME }}.service
         systemctl disable ${{ env.NAME }}.service
         
         # setup service
         systemctl daemon-reload
         systemctl enable ${{ env.NAME }}.service
-        service ${{ env.NAME }} start
+        systemctl start ${{ env.NAME }}.service
         EOF
         chmod 755 Publish/DEBIAN/postinst
     - name: build-deb-action
