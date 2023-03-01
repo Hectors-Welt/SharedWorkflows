@@ -69,18 +69,15 @@ jobs:
         run: 'dotnet publish ./src/${{ env.NAME }}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }} -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
 
       - name: Create unit file path
-        run: mkdir -p Publish/etc/systemd/system/
+        run: mkdir -p Publish/DEBIAN
 
       - name: Build unit file
         run: |
-          cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
+          cat << EOF > Publish/DEBIAN/${{ env.NAME }}.service
           [Unit]
           Description=Hector ${{ env.NAME }}
           After=network-online.target
           Requires=network-online.target
-
-          [Install]
-          WantedBy=multi-user.target
 
           [Service]
           EnvironmentFile=/etc/serviceEnvironment
@@ -90,26 +87,15 @@ jobs:
           Restart=always
           RestartSec=5
 
-          # Output to syslog
-          StandardOutput=syslog
-          StandardError=syslog
-          SyslogIdentifier=${{ env.NAME }}.service
+          [Install]
+          WantedBy=multi-user.target
+          
           EOF
-      - name: Create postinstall script
-        run: |
-          mkdir -p Publish/DEBIAN
-          cat << EOF > Publish/DEBIAN/postinst
-          #!/bin/sh
-          # stop service
-          service ${{ env.NAME }} stop
-          systemctl disable ${{ env.NAME }}.service
-
-          # setup service
-          systemctl daemon-reload
-          systemctl enable ${{ env.NAME }}.service
-          service ${{ env.NAME }} start
-          EOF
-          chmod 755 Publish/DEBIAN/postinst
+          
+      - name: Create compat file
+        run: |          
+          echo '10' >> Publish/DEBIAN/compat
+          
       - name: build-deb-action
         id: package
         uses: jiro4989/build-deb-action@v2
@@ -123,7 +109,11 @@ jobs:
           # Package version.
           version: ${{ env.VERSION }}
           # Package architecture.
-          arch: all
+          arch: 'amd64'
+          # Package dependencies.          
+          depends: 'debhelper (>= 10)'
+          # Package description.          
+          desc: Hector ${{ env.NAME }}'
 
       - name: push deb package to nexus apt repo
         if: startsWith(github.ref, 'refs/tags/v')
