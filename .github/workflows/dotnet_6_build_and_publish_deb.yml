@@ -69,11 +69,11 @@ jobs:
         run: 'dotnet publish ./src/${{ env.NAME }}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }} -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
 
       - name: Create unit file path
-        run: mkdir -p Publish/DEBIAN
+        run: mkdir -p Publish/etc/systemd/system/
 
       - name: Build unit file
         run: |
-          cat << EOF > Publish/DEBIAN/${{ env.NAME }}.service
+          cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
           [Unit]
           Description=Hector ${{ env.NAME }}
           After=network-online.target
@@ -97,16 +97,23 @@ jobs:
           mkdir -p Publish/DEBIAN
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
-          # stop service
-          systemctl stop ${{env.NAME}}.service
-          systemctl disable ${{env.NAME}}.service
-          
           # setup service
           systemctl daemon-reload
           systemctl enable ${{env.NAME}}.service
           systemctl start ${{env.NAME}}.service
           EOF
           chmod 755 Publish/DEBIAN/postinst    
+          
+      - name: Create preremove script
+        run: |
+          mkdir -p Publish/DEBIAN
+          cat << EOF > Publish/DEBIAN/prerm
+          #!/bin/sh
+          # stop service
+          systemctl stop ${{env.NAME}}.service
+          systemctl disable ${{env.NAME}}.service
+          EOF
+          chmod 755 Publish/DEBIAN/prerm   
           
       - name: Create compat file
         run: |          
