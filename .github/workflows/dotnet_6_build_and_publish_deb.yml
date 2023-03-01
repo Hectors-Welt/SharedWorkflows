@@ -68,8 +68,10 @@ jobs:
       - name: Build service
         run: 'dotnet publish ./src/${{ env.NAME }}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }} -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
 
-      - name: Create unit file path
-        run: mkdir -p Publish/etc/systemd/system/
+      - name: Create file paths
+        run: |
+          mkdir -p Publish/etc/systemd/system/
+          mkdir -p Publish/DEBIAN
 
       - name: Build unit file
         run: |
@@ -94,7 +96,6 @@ jobs:
           
       - name: Create postinstall script
         run: |
-          mkdir -p Publish/DEBIAN
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
           # setup service
@@ -104,7 +105,6 @@ jobs:
           
       - name: Create preremove script
         run: |
-          mkdir -p Publish/DEBIAN
           cat << EOF > Publish/DEBIAN/prerm
           #!/bin/sh
           # stop service
