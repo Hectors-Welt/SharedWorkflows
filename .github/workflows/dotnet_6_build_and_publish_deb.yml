@@ -72,6 +72,7 @@ jobs:
         run: |
           mkdir -p Publish/etc/systemd/system/
           mkdir -p Publish/DEBIAN
+          chmod 755 Publish/DEBIAN/
 
       - name: Build unit file
         run: |
