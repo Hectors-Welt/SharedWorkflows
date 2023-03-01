@@ -99,8 +99,7 @@ jobs:
           #!/bin/sh
           # setup service
           systemctl daemon-reload
-          systemctl enable ${{env.NAME}}.service
-          systemctl start ${{env.NAME}}.service
+          systemctl enable ${{env.NAME}}.service --now
           EOF
           chmod 755 Publish/DEBIAN/postinst    
           
@@ -110,8 +109,7 @@ jobs:
           cat << EOF > Publish/DEBIAN/prerm
           #!/bin/sh
           # stop service
-          systemctl stop ${{env.NAME}}.service
-          systemctl disable ${{env.NAME}}.service
+          systemctl disable ${{env.NAME}}.service --now
           EOF
           chmod 755 Publish/DEBIAN/prerm   
           
