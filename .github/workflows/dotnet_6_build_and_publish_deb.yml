@@ -113,10 +113,6 @@ jobs:
           EOF
           chmod 755 Publish/DEBIAN/prerm   
           
-      - name: Create compat file
-        run: |          
-          echo '10' >> Publish/DEBIAN/compat
-          
       - name: build-deb-action
         id: package
         uses: jiro4989/build-deb-action@v2
@@ -131,8 +127,6 @@ jobs:
           version: ${{ env.VERSION }}
           # Package architecture.
           arch: 'amd64'
-          # Package dependencies.          
-          depends: 'debhelper (>= 10)'
           # Package description.          
           desc: Hector ${{ env.NAME }}
 
