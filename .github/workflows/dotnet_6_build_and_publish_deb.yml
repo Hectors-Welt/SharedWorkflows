@@ -92,6 +92,22 @@ jobs:
           
           EOF
           
+      - name: Create postinstall script
+        run: |
+          mkdir -p Publish/DEBIAN
+          cat << EOF > Publish/DEBIAN/postinst
+          #!/bin/sh
+          # stop service
+          systemctl stop ${{env.NAME}}.service
+          systemctl disable ${{env.NAME}}.service
+          
+          # setup service
+          systemctl daemon-reload
+          systemctl enable ${{env.NAME}}.service
+          systemctl start ${{env.NAME}}.service
+          EOF
+          chmod 755 Publish/DEBIAN/postinst    
+          
       - name: Create compat file
         run: |          
           echo '10' >> Publish/DEBIAN/compat
@@ -113,7 +129,7 @@ jobs:
           # Package dependencies.          
           depends: 'debhelper (>= 10)'
           # Package description.          
-          desc: Hector ${{ env.NAME }}'
+          desc: Hector ${{ env.NAME }}
 
       - name: push deb package to nexus apt repo
         if: startsWith(github.ref, 'refs/tags/v')
