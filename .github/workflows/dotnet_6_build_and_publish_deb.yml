@@ -101,7 +101,6 @@ jobs:
           systemctl daemon-reload
           systemctl enable ${{env.NAME}}.service --now
           EOF
-          chmod 755 Publish/DEBIAN/postinst    
           
       - name: Create preremove script
         run: |
@@ -111,7 +110,6 @@ jobs:
           # stop service
           systemctl disable ${{env.NAME}}.service --now
           EOF
-          chmod 755 Publish/DEBIAN/prerm   
           
       - name: build-deb-action
         id: package
