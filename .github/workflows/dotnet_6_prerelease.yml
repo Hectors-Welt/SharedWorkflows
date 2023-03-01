@@ -159,13 +159,13 @@ jobs:
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
           # stop service
-          service ${{env.NAME}} stop
+          systemctl stop ${{env.NAME}}.service
           systemctl disable ${{env.NAME}}.service
           
           # setup service
           systemctl daemon-reload
           systemctl enable ${{env.NAME}}.service
-          service ${{env.NAME}} start
+          systemctl start ${{env.NAME}}.service
           EOF
           chmod 755 Publish/DEBIAN/postinst
           
