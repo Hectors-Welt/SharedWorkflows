@@ -127,7 +127,7 @@ jobs:
           # Package version.
           version: ${{ env.VERSION }}
           # Package architecture.
-          arch: 'amd64'
+          arch: all
           # Package description.          
           desc: Hector ${{ env.NAME }}
 
