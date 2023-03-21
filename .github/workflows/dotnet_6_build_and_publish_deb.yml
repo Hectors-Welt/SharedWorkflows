@@ -58,48 +58,42 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
 
-
       - name: add feeds
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
           dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
           dotnet restore
 
-      - name: Build service
-        run: 'dotnet publish ./src/${{ env.NAME }}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }} -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
-
+      - name: Publish service
+        run: >
+          dotnet publish ./src/${{ env.NAME }}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }}
+          -r linux-arm --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}
       - name: Create file paths
         run: |
           mkdir -p Publish/etc/systemd/system/
-          mkdir -p Publish/DEBIAN
-
-      - name: Build unit file
+          mkdir Publish/DEBIAN
+          
+      - name: Create systemd unit
         run: |
           cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
           [Unit]
           Description=Hector ${{ env.NAME }}
           After=network-online.target
           Requires=network-online.target
-
           [Service]
-          EnvironmentFile=/etc/serviceEnvironment
           WorkingDirectory=/opt/hector/${{ env.NAME }}
           ExecStart=/opt/hector/${{ env.NAME }}/${{ env.NAME }}
           TimeoutStopSec=1
           Restart=always
           RestartSec=5
-
           [Install]
           WantedBy=multi-user.target
-          
           EOF
-
+          
       - name: Create postinstall script
         run: |
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
-          # setup service
-          systemctl daemon-reload
           systemctl enable ${{env.NAME}}.service --now
           EOF
           chmod 755 Publish/DEBIAN/postinst
@@ -108,29 +102,25 @@ jobs:
         run: |
           cat << EOF > Publish/DEBIAN/prerm
           #!/bin/sh
-          # stop service
           systemctl disable ${{env.NAME}}.service --now
           EOF
           chmod 755 Publish/DEBIAN/prerm
-
           
-      - name: build-deb-action
+      - name: Set user and group to root
+        run: |
+          sudo chown -R root:root Publish
+      - name: Build deb package
         id: package
         uses: jiro4989/build-deb-action@v2
         with:
-          # Package name of debian package.
           package: ${{ env.NAME }}
-          # Directory of release files.
-          package_root: ./Publish
-          # Package maintainer name.
+          package_root: Publish
           maintainer: "Hectors-Welt GmbH"
-          # Package version.
           version: ${{ env.VERSION }}
-          # Package architecture.
-          arch: 'amd64'
-          # Package description.          
+          arch: "armhf"
           desc: Hector ${{ env.NAME }}
-
+          
+  
       - name: push deb package to nexus apt repo
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -140,3 +130,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/prerelease-')
         run: |
           curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoPrereleaseHost  }}"
+
