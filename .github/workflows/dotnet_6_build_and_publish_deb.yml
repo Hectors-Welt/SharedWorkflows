@@ -83,6 +83,7 @@ jobs:
           Requires=network-online.target
           
           [Service]
+          EnvironmentFile=/etc/serviceEnvironment
           WorkingDirectory=/opt/hector/${{ env.NAME }}
           ExecStart=/opt/hector/${{ env.NAME }}/${{ env.NAME }}
           TimeoutStopSec=1
