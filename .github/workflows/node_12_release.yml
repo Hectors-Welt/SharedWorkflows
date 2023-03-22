@@ -73,33 +73,30 @@ jobs:
   
     - name: Create postinstall script
       run: |
-        mkdir -p Publish/DEBIAN
         cat << EOF > Publish/DEBIAN/postinst
         #!/bin/sh
-        # stop service
-        systemctl stop ${{ env.NAME }}.service
-        systemctl disable ${{ env.NAME }}.service
-        
-        # setup service
-        systemctl daemon-reload
-        systemctl enable ${{ env.NAME }}.service
-        systemctl start ${{ env.NAME }}.service
+        systemctl enable ${{env.NAME}}.service --now
         EOF
         chmod 755 Publish/DEBIAN/postinst
+        
+    - name: Create preremove script
+      run: |
+        cat << EOF > Publish/DEBIAN/prerm
+        #!/bin/sh
+        systemctl disable ${{env.NAME}}.service --now
+        EOF
+        chmod 755 Publish/DEBIAN/prerm
+        
     - name: build-deb-action
       id: package
       uses: jiro4989/build-deb-action@v2
       with:
-        # Package name of debian package.
         package: ${{ env.NAME }}
-        # Directory of release files.
-        package_root: ./Publish
-        # Package maintainer name.
+        package_root: Publish
         maintainer: "Hectors-Welt GmbH"
-        # Package version.
         version: ${{ env.VERSION }}
-        # Package architecture.
-        arch: all
+        arch: "amd64"
+        desc: Hector ${{ env.NAME }}
 
     - name: push deb package to nexus apt repo
       run: |
