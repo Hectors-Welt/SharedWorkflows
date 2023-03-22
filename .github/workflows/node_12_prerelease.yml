@@ -50,8 +50,9 @@ jobs:
         mv build/* Publish/opt/hector/${{ env.NAME }}
         
     - name: Create unit file path
-      run: mkdir -p Publish/etc/systemd/system/
-
+      run: | 
+        mkdir -p Publish/etc/systemd/system/
+        mkdir Publish/DEBIAN
     - name: Build unit file
       run: |
         cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
@@ -94,7 +95,7 @@ jobs:
       uses: jiro4989/build-deb-action@v2
       with:
         package: ${{ env.NAME }}
-        package_root: Publish
+        package_root: ./Publish
         maintainer: "Hectors-Welt GmbH"
         version: ${{ env.VERSION }}
         arch: "amd64"
