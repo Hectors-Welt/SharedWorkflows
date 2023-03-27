@@ -63,6 +63,6 @@ jobs:
           dotnet restore
           
       - name: Build
-        run: dotnet test ${{ env.NAME }}.sln --filter TestCategory=Unit
+        run: dotnet test ${{ env.SERVICE }}.sln --filter TestCategory=Unit
 
       
