@@ -15,9 +15,11 @@ on:
         required: true
       nugetGithubPassword:
         required: true
-      githubToken:
-        required: true
       dockerRepo:
+        required: true
+      nexusDockerUsername:
+        required: true
+      nexusDockerPassword:
         required: true
 
  
