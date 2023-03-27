@@ -1,4 +1,4 @@
-name: Create v6 prerelease
+name: Create and push v6 docker image 
 
 on:
   workflow_call:
