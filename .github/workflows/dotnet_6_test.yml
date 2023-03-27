@@ -1,4 +1,4 @@
-name: Create v6 prerelease
+name: Run dotnet v6 test
 
 on:
   workflow_call:
@@ -30,7 +30,7 @@ env:
   SERVICE: ${{ github.event.repository.name }} 
         
 jobs:  
-  test:
+  dotnet_6_test:
     
     runs-on: windows-2019
     
