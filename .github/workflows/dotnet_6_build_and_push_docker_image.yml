@@ -112,7 +112,7 @@ jobs:
         build-args: |
           SERVICE=${{ env.SERVICE }}
         push: true
-        tags: ${{ steps.meta.outputs.tags }}, ${{ env.nexusDockerUsername }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:prerelease
+        tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.nexusDockerUsername }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:prerelease
         labels: ${{ steps.meta.outputs.labels }}
         file: ./src/Dockerfile      
 
