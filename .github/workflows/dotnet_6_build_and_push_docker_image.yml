@@ -73,7 +73,6 @@ jobs:
         
     - name: Extract metadata (tags, labels) for Docker
       id: meta-release
-      if: startsWith(github.ref, 'refs/tags/v')
       uses: docker/metadata-action@v2
       with:
         images: ${{ env.REGISTRY }}/${{ env.SERVICE }}
@@ -81,43 +80,31 @@ jobs:
           latest=false
         tags: |
           type=ref,event=tag
-          type=schedule,value='release'
-          
-    - name: Extract metadata (tags, labels) for Docker
-      if: startsWith(github.ref, 'refs/tags/prerelease-')
-      id: meta-prerelease
-      uses: docker/metadata-action@v2
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.SERVICE }}
-        flavor: |
-          latest=false
-        tags: |
-          type=ref,event=tag
-          type=schedule,value='prerelease'
+
 
     - name: Build and push Docker image
       if: startsWith(github.ref, 'refs/tags/v')
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v4
       with:
         context: .
         build-args: |
           SERVICE=${{ env.SERVICE }}
         push: true
-        tags: ${{ steps.meta-release.outputs.tags }}
-        labels: ${{ steps.meta-release.outputs.labels }}
+        tags: ${{ steps.meta.outputs.tags }}, release
+        labels: ${{ steps.meta.outputs.labels }}
         file: ./src/Dockerfile
         
  
 
     - name: Build and push Docker image
       if: startsWith(github.ref, 'refs/tags/prerelease-')
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v4
       with:
         context: .
         build-args: |
           SERVICE=${{ env.SERVICE }}
         push: true
-        tags: ${{ steps.meta-prerelease.outputs.tags }}
-        labels: ${{ steps.meta-prerelease.outputs.labels }}
+        tags: ${{ steps.meta.outputs.tags }}, prerelease
+        labels: ${{ steps.meta.outputs.labels }}
         file: ./src/Dockerfile      
 
