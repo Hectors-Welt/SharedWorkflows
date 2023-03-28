@@ -94,7 +94,7 @@ jobs:
         build-args: |
           SERVICE=${{ env.SERVICE }}
         push: true
-        tags: ${{ steps.meta.outputs.tags }}, ${{ env.REGISTRY }}/${{ env.SERVICE }}:release
+        tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:release
         labels: ${{ steps.meta.outputs.labels }}
         file: ./src/Dockerfile
         
