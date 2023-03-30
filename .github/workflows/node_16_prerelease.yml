@@ -38,7 +38,7 @@ jobs:
         echo VERSION=$($env:GITHUB_REF -replace "refs/tags/prerelease-")  >> $env:GITHUB_ENV
         echo RUN_NUMBER=$(echo ${{github.run_number}}) >> $env:GITHUB_ENV
         echo TAG_NAME=$(echo ${{github.ref_name}}) >> $env:GITHUB_ENV
-        echo NAME=$(echo ClubAppService) >> $env:GITHUB_ENV
+        echo NAME=$(echo MitarbeiterAppService) >> $env:GITHUB_ENV
        
     - name: get version
       id: version
@@ -83,7 +83,7 @@ jobs:
         echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
-        echo NAME=$(echo ClubAppService) >> $GITHUB_ENV
+        echo NAME=$(echo MitarbeiterAppService) >> $GITHUB_ENV
         
     - name: copy file via ssh password
       uses: appleboy/scp-action@master
