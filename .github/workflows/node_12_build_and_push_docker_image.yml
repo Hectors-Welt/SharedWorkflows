@@ -3,23 +3,12 @@ name: Create v6 prerelease
 on:
   workflow_call:
     secrets:
-      hangfireFeedUrl:
-        required: true  
-      hangfireUsername:
-        required: true
-      hangfirePassword:
-        required: true
-      nugetGithubHost:
-        required: true
-      nugetGithubUsername:
-        required: true
-      nugetGithubPassword:
-        required: true
-      githubToken:
-        required: true
       dockerRepo:
         required: true
-
+      nexusDockerUsername:
+        required: true      
+      nexusDockerPassword:
+        required: true
  
 env:
   SERVICE: ${{ github.event.repository.name }}
