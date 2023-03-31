@@ -27,86 +27,86 @@ env:
 
 jobs:
   build_and_push_docker_image:
-  runs-on: ubuntu-latest
-  permissions:
-    contents: read
-    packages: write
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
-  steps:   
-  - name: Checkout repository
-    uses: actions/checkout@v2
+    steps:   
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-  - name: Log in to the Container registry
-    uses: docker/login-action@v2
-    with:
-      registry: ${{ env.REGISTRY }}
-      username: ${{ secrets.nexusDockerUsername }}
-      password: ${{ secrets.nexusDockerPassword }}
+    - name: Log in to the Container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.nexusDockerUsername }}
+        password: ${{ secrets.nexusDockerPassword }}
 
-  - name: set version in package.json
-    run: |
-      sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
+    - name: set version in package.json
+      run: |
+        sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
 
-  - name: create docker file
-    working-directory: ./src
-    run: | 
-      cat <<EOF >Dockerfile
-      FROM node: 12
-      WORKDIR /usr/src/app
-      COPY package*.json ./
-      RUN npm ci
-      COPY . .
-      RUN npm run build
-      FROM node:slim
-      ENV NODE_ENV production
-      USER node
-      WORKDIR /usr/src/app
+    - name: create docker file
+      working-directory: ./src
+      run: | 
+        cat <<EOF >Dockerfile
+        FROM node: 12
+        WORKDIR /usr/src/app
+        COPY package*.json ./
+        RUN npm ci
+        COPY . .
+        RUN npm run build
+        FROM node:slim
+        ENV NODE_ENV production
+        USER node
+        WORKDIR /usr/src/app
 
-      COPY package*.json ./
-      RUN npm ci --production
-      COPY --from=builder /usr/src/app/server ./server
+        COPY package*.json ./
+        RUN npm ci --production
+        COPY --from=builder /usr/src/app/server ./server
 
-      EXPOSE 80
-      CMD [ "node", "server/index.js" ]
+        EXPOSE 80
+        CMD [ "node", "server/index.js" ]
 
-      EOF
+        EOF
 
-  - name: Extract metadata (tags, labels) for Docker
-    id: meta
-    uses: docker/metadata-action@v2
-    with:
-      images: ${{ env.REGISTRY }}/${{ env.SERVICE }}
-      flavor: |
-        latest=false
-      tags: |
-        type=ref,event=tag
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v2
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.SERVICE }}
+        flavor: |
+          latest=false
+        tags: |
+          type=ref,event=tag
 
-  - name: Build and push Docker image
-    if: startsWith(github.ref, 'refs/tags/v')
-    uses: docker/build-push-action@v4
-    with:
-      context: .
-      build-args: |
-        SERVICE=${{ env.SERVICE }}
-      push: true
-      tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:release
-      labels: ${{ steps.meta.outputs.labels }}
-      file: ./src/Dockerfile
-      
-  - name: Get servicename to lowercase
-    id: toLowerCase
-    run: |
-      INPUT=${{ env.NAME }}
-      echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT  
-       
-  - name: Build and push Docker image
-    if: startsWith(github.ref, 'refs/tags/prerelease-')
-    uses: docker/build-push-action@v4
-    with:
-      context: .
-      build-args: |
-        SERVICE=${{ env.SERVICE }}
-      push: true
-      tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:prerelease
-      labels: ${{ steps.meta.outputs.labels }}
-      file: ./src/Dockerfile    
+    - name: Build and push Docker image
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        build-args: |
+          SERVICE=${{ env.SERVICE }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:release
+        labels: ${{ steps.meta.outputs.labels }}
+        file: ./src/Dockerfile
+
+    - name: Get servicename to lowercase
+      id: toLowerCase
+      run: |
+        INPUT=${{ env.NAME }}
+        echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT  
+
+    - name: Build and push Docker image
+      if: startsWith(github.ref, 'refs/tags/prerelease-')
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        build-args: |
+          SERVICE=${{ env.SERVICE }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:prerelease
+        labels: ${{ steps.meta.outputs.labels }}
+        file: ./src/Dockerfile    
