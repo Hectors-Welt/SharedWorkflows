@@ -44,8 +44,8 @@ jobs:
       password: ${{ secrets.nexusDockerPassword }}
 
   - name: set version in package.json
-      run: |
-        sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
+    run: |
+      sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
 
   - name: create docker file
     working-directory: ./src
