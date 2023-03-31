@@ -37,7 +37,6 @@ jobs:
         sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
 
     - name: create docker file
-      working-directory: ./src
       run: | 
         cat <<EOF >Dockerfile
         FROM node: 12
@@ -80,7 +79,7 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:release
         labels: ${{ steps.meta.outputs.labels }}
-        file: ./src/Dockerfile
+        file: ./Dockerfile
 
     - name: Get servicename to lowercase
       id: toLowerCase
@@ -98,4 +97,4 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:prerelease
         labels: ${{ steps.meta.outputs.labels }}
-        file: ./src/Dockerfile    
+        file: ./Dockerfile    
