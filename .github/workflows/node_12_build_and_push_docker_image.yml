@@ -37,6 +37,7 @@ jobs:
         sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
 
     - name: create docker file
+      working-directory: ./server
       run: | 
         cat <<EOF >Dockerfile
         FROM node as builder
