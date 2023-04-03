@@ -43,15 +43,16 @@ jobs:
     - name: create docker file
       run: | 
         cat <<EOF >Dockerfile
+        FROM ubuntu as intermediate
+        RUN apt-get update \
+            apt-get upgrade \
+            apt-get install git
+        RUN git config --global url."git+https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git+https://github.com/
         FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package.json ./
         COPY server ./server
         RUN ls -a
-        RUN apt-get update && \
-        RUN apt-get upgrade -y && \
-        RUN apt-get install -y git
-        RUN git config --global url."git+https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git+https://github.com/
         RUN npm install ${{ secrets.nugetGithubUsername}}/SharedTypescript --save
         RUN npm install
         RUN npm run build
@@ -59,10 +60,6 @@ jobs:
         FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package.json ./
-        RUN apt-get update && \
-        RUN apt-get upgrade -y && \
-        RUN apt-get install -y git
-        RUN git config --global url."git+https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git+https://github.com/
         RUN npm install ${{ secrets.nugetGithubUsername}}/SharedTypescript --save        
         RUN npm install --only=production
         COPY --from=0 /usr/dist .
