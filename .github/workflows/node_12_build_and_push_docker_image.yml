@@ -43,7 +43,7 @@ jobs:
     - name: create docker file
       run: | 
         cat <<EOF >Dockerfile
-        FROM node as builder
+        FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package.json ./
         RUN apk add --no-cache git openssh
@@ -52,7 +52,7 @@ jobs:
         COPY . .
         RUN npm run build
         ## this is stage two , where the app actually runs
-        FROM node as builder
+        FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package.json ./
         RUN apk add --no-cache git openssh
