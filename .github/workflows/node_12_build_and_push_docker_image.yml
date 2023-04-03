@@ -46,7 +46,7 @@ jobs:
         FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package.json ./
-        COPY server ./server
+        COPY . .
         RUN apk add --no-cache git openssh
         RUN git config --global url."https://${{secrets.nugetGithubPassword}}:x-oauth-basic@github.com/".insteadOf "git@github.com:"
         RUN npm install
