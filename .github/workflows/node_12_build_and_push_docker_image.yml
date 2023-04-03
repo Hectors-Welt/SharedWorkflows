@@ -43,17 +43,20 @@ jobs:
     - name: create docker file
       run: | 
         cat <<EOF >Dockerfile
-        FROM node:12
+        FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package*.json ./
+        RUN apk add --no-cache git openssh
         RUN git config --global url."https://${{secrets.nugetGithubPassword}}:x-oauth-basic@github.com/".insteadOf "git@github.com:"
         RUN npm ci
         COPY . .
+        RUN node_modules/.bin/ng build --prod
         RUN npm run build
         ## this is stage two , where the app actually runs
-        FROM node:12
+        FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package.json ./
+        RUN apk add --no-cache git openssh
         RUN git config --global url."https://${{secrets.nugetGithubPassword}}:x-oauth-basic@github.com/".insteadOf "git@github.com:"
         RUN npm install --only=production
         COPY --from=0 /usr/dist .
