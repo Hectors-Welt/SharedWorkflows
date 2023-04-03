@@ -49,7 +49,8 @@ jobs:
         COPY server ./server
         RUN ls -a
         USER node
-        RUN git config --global url."https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git@github.com:
+        RUN git config --global url."git+https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git+https://github.com/
+        RUN npm install ${{ secrets.nugetGithubUsername}}/SharedTypescript --save
         RUN npm install
         RUN npm run build
         ## this is stage two , where the app actually runs
@@ -57,7 +58,8 @@ jobs:
         WORKDIR /usr
         COPY package.json ./
         USER node
-        RUN git config --global url."https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git@github.com:
+        RUN git config --global url."git+https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git+https://github.com/
+        RUN npm install ${{ secrets.nugetGithubUsername}}/SharedTypescript --save        
         RUN npm install --only=production
         COPY --from=0 /usr/dist .
         EXPOSE 80
