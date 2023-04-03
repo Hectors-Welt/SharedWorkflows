@@ -49,6 +49,9 @@ jobs:
         COPY server ./server
         RUN ls -a
         USER node
+        RUN apt-get update && \
+            apt-get upgrade -y && \
+            apt-get install -y git
         RUN git config --global url."git+https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git+https://github.com/
         RUN npm install ${{ secrets.nugetGithubUsername}}/SharedTypescript --save
         RUN npm install
@@ -58,6 +61,9 @@ jobs:
         WORKDIR /usr
         COPY package.json ./
         USER node
+        RUN apt-get update && \
+            apt-get upgrade -y && \
+            apt-get install -y git
         RUN git config --global url."git+https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git+https://github.com/
         RUN npm install ${{ secrets.nugetGithubUsername}}/SharedTypescript --save        
         RUN npm install --only=production
