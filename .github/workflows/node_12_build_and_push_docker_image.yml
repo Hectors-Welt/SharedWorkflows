@@ -47,11 +47,10 @@ jobs:
         WORKDIR /usr
         COPY package.json ./
         COPY server ./server
-        RUN ls -a
         RUN apk add --no-cache git openssh
         RUN git config --global url."https://${{secrets.nugetGithubPassword}}:x-oauth-basic@github.com/".insteadOf "git@github.com:"
         RUN npm install
-        WORKDIR /usr/${{env.SERVICE}}
+        COPY . .
         RUN npm run build
         ## this is stage two , where the app actually runs
         FROM node:12.17.0-alpine
