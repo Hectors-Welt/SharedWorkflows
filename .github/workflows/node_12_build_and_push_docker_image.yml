@@ -43,7 +43,6 @@ jobs:
     - name: create docker file
       run: | 
         cat <<EOF >Dockerfile
-        RUN git config --global url."git+https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git+https://github.com/
         FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package.json ./
