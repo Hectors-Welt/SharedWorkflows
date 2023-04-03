@@ -44,24 +44,17 @@ jobs:
       run: | 
         cat <<EOF >Dockerfile
         FROM node:14.20.0-alpine
-        WORKDIR /usr
+        WORKDIR /usr/src/app
         COPY package*.json ./
         RUN apk add --no-cache git openssh
         RUN git config --global url."https://${{secrets.nugetGithubPassword}}:x-oauth-basic@github.com/".insteadOf "git@github.com:"
-        RUN npm ci
+        RUN npm install
         COPY . .
-        RUN npm i -g @angular/cli
         RUN npm run build
         ## this is stage two , where the app actually runs
-        FROM node:14.20.0-alpine
-        WORKDIR /usr
-        COPY package.json ./
-        RUN apk add --no-cache git openssh
-        RUN git config --global url."https://${{secrets.nugetGithubPassword}}:x-oauth-basic@github.com/".insteadOf "git@github.com:"
-        RUN npm install --only=production
-        COPY --from=0 /usr/dist .
-        EXPOSE 80
-        CMD [ "node", "dist/index.js" ]
+        FROM nginx:1.17.1-alpine
+        COPY nginx.conf /etc/nginx/nginx.conf
+        COPY --from=build /usr/src/app/dist/${{ env.SERVICE }} /usr/share/nginx/html
 
         EOF
 
