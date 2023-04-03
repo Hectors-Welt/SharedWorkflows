@@ -49,7 +49,7 @@ jobs:
         COPY server ./server
         RUN ls -a
         USER node
-        RUN npm install --unsafe-perm https://${{secrets.nugetGithubUsername}}:${{secrets.nugetGithubPassword}}@git@github.com:Hectors-Welt/SharedTypescript.git#develop 
+        RUN npm install --unsafe-perm https://${{secrets.nugetGithubUsername}}:${{secrets.nugetGithubPassword}}@github.com:Hectors-Welt/SharedTypescript.git#develop 
         RUN npm install
         RUN npm run build
         ## this is stage two , where the app actually runs
@@ -57,7 +57,7 @@ jobs:
         WORKDIR /usr
         COPY package.json ./
         USER node
-        RUN npm install --unsafe-perm https://${{secrets.nugetGithubUsername}}:${{secrets.nugetGithubPassword}}@git@github.com:Hectors-Welt/SharedTypescript.git#develop 
+        RUN npm install --unsafe-perm https://${{secrets.nugetGithubUsername}}:${{secrets.nugetGithubPassword}}@github.com:Hectors-Welt/SharedTypescript.git#develop 
         RUN npm install --only=production
         COPY --from=0 /usr/dist .
         EXPOSE 80
