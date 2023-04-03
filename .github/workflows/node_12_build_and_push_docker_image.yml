@@ -57,7 +57,8 @@ jobs:
         FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package.json ./
-        RUN npm install ${{ secrets.nugetGithubUsername}}/SharedTypescript --save        
+        RUN apk add --no-cache git openssh
+        RUN git config --global url."https://${{secrets.nugetGithubPassword}}:x-oauth-basic@github.com/".insteadOf "git@github.com:"
         RUN npm install --only=production
         COPY --from=0 /usr/dist .
         EXPOSE 80
