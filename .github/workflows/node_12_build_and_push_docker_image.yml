@@ -44,14 +44,16 @@ jobs:
         COPY package.json ./
         COPY server ./server
         RUN ls -a
-        RUN npm install git+https://git@github.com:Hectors-Welt/SharedTypescript.git
+        USER node
+        RUN npm install --unsafe-perm Hectors-Welt/SharedTypescript.git#master
         RUN npm install
         RUN npm run build
         ## this is stage two , where the app actually runs
         FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package.json ./
-        RUN npm install git+https://git@github.com:Hectors-Welt/SharedTypescript.git
+        USER node
+        RUN npm install --unsafe-perm Hectors-Welt/SharedTypescript.git#master
         RUN npm install --only=production
         COPY --from=0 /usr/dist .
         EXPOSE 80
