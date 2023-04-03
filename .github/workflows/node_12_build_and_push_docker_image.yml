@@ -43,17 +43,14 @@ jobs:
     - name: create docker file
       run: | 
         cat <<EOF >Dockerfile
-        FROM ubuntu as intermediate
-        RUN apt-get update \
-            apt-get upgrade \
-            apt-get install git
         RUN git config --global url."git+https://${{ secrets.nugetGithubPassword}}@github.com/".insteadOf git+https://github.com/
         FROM node:12.17.0-alpine
         WORKDIR /usr
         COPY package.json ./
         COPY server ./server
         RUN ls -a
-        RUN npm install ${{ secrets.nugetGithubUsername}}/SharedTypescript --save
+        RUN apk add --no-cache git openssh
+        RUN git config --global url."https://${{secrets.nugetGithubPassword}}:x-oauth-basic@github.com/".insteadOf "git@github.com:"
         RUN npm install
         RUN npm run build
         ## this is stage two , where the app actually runs
