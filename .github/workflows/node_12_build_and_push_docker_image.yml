@@ -43,24 +43,16 @@ jobs:
     - name: create docker file
       run: | 
         cat <<EOF >Dockerfile
-        FROM node:14.20.0-alpine
-        WORKDIR /usr
-        COPY package*.json ./
-        RUN apk add --no-cache git openssh
-        RUN git config --global url."https://${{secrets.nugetGithubPassword}}:x-oauth-basic@github.com/".insteadOf "git@github.com:"
-        RUN npm install
+        FROM node:12
+        ENV NODE_ENV=production
+        WORKDIR /usr/src/app
+        COPY ["package.json", "package-lock.json*", "npm-shrinkwrap.json*", "./"]
+        RUN npm install --production --silent && mv node_modules ../
         COPY . .
-        RUN npm i -g @angular/cli
-        RUN npm run build
-        FROM node:14.20.0-alpine
-        WORKDIR /usr
-        COPY package.json ./
-        RUN apk add --no-cache git openssh
-        RUN git config --global url."https://${{secrets.nugetGithubPassword}}:x-oauth-basic@github.com/".insteadOf "git@github.com:"
-        RUN npm install --only=production
-        COPY --from=0 /usr/dist .
         EXPOSE 80
-        CMD [ "node", "dist/index.js" ]
+        RUN chown -R node /usr/src/app
+        USER node
+        CMD ["node", "dist/index.js"]
 
         EOF
 
