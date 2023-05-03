@@ -86,7 +86,7 @@ jobs:
     - name: Get servicename to lowercase
       id: toLowerCase
       run: |
-        INPUT=${{env.NAME}}
+        INPUT=${{env.SERVICE}}
         echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT  
 
     - name: Build and push Docker image
