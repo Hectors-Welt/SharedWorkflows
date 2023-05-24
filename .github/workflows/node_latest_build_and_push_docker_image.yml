@@ -50,7 +50,7 @@ jobs:
 
     - name: set version in package.json
       run: |
-        sed -i '/version/c\"version": "${{env.VERSION}}",' ./package.json
+        sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
 
     - name: create docker file
       run: | 
