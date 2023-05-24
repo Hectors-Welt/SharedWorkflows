@@ -43,7 +43,6 @@ jobs:
         echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
-        echo NAME=$(echo ClubAppService) >> $GITHUB_ENV
         
     - name: Prepare environemt variables
       if: startsWith(github.ref, 'refs/tags/v')
@@ -52,7 +51,6 @@ jobs:
         echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
-        echo NAME=$(echo ClubAppService) >> $GITHUB_ENV
 
     - name: set version in package.json
       run: |
@@ -97,7 +95,7 @@ jobs:
     - name: Get servicename to lowercase
       id: toLowerCase
       run: |
-        INPUT=${{ env.NAME }}
+        INPUT=${{ env.SERVICE }}
         echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT  
 
     - name: Build and push Docker image
