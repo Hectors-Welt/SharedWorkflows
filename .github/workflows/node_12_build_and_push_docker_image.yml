@@ -9,10 +9,6 @@ on:
         required: true      
       nexusDockerPassword:
         required: true
-      nugetGithubUsername:
-        required: true
-      nugetGithubPassword:
-        required: true
  
 env:
   SERVICE: ${{ github.event.repository.name }}
