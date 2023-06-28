@@ -45,7 +45,6 @@ jobs:
         sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
         npm install
         npm run build
-        npm run package
         mkdir -p Publish/opt/hector/${{ env.NAME }}
         mv build/* Publish/opt/hector/${{ env.NAME }}
         
