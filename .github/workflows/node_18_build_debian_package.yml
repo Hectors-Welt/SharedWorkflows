@@ -8,6 +8,8 @@ on:
       nexusAptRepoPassword:
         required: true
       nexusAptRepoHost:
+        required: true        
+      nexusAptRepoHostPrerelease:
         required: true      
 
 env:
