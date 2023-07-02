@@ -16,7 +16,7 @@ env:
   SERVICE: ${{ github.event.repository.name }}
 
 jobs:
-  test:
+  build_debian_package_and_push_to_nexus:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
