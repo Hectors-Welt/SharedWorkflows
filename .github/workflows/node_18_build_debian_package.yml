@@ -46,10 +46,10 @@ jobs:
         sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
         PUPPETEER_SKIP_DOWNLOAD=true npm i
         npm run build
-        mkdir -p Publish/opt/hector/${{ env.SERVICE }}
+        mkdir -p Publish/opt/hector/${{ env.SERVICE }}/node_modules
         cp -r dist/* Publish/opt/hector/${{ env.SERVICE }}
-        cd Publish/opt/hector/${{ env.SERVICE }}
-        PUPPETEER_SKIP_DOWNLOAD=true npm i 
+        mv node_modules/* Publish/opt/hector/${{ env.SERVICE }}/node_modules
+
 
     - name: Create unit file path
       run: |
@@ -58,14 +58,14 @@ jobs:
     
     - name: Build unit file & startup script
       run: |
-        startup=Publish/opt/hector/${{ env.SERVICE }}/start.sh
+        startup=Publish/opt/hector/${{ env.NAME }}/start.sh
         cat > $startup <<EOF
         #!/bin/bash
         [ -s "/home/services-user/.nvm/nvm.sh" ] && \. "/home/services-user/.nvm/nvm.sh"
         nvm use 18
         node src/main.js
         EOF
-                
+
         chmod +x $startup
         
         cat << EOF > Publish/etc/systemd/system/${{ env.SERVICE }}.service
