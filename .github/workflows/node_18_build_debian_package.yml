@@ -56,7 +56,7 @@ jobs:
         mkdir -p Publish/etc/systemd/system/
         mkdir Publish/DEBIAN
     
-    - name: Build unit file && startup script
+    - name: Build unit file & startup script
       run: |
         startup=Publish/opt/hector/${{ env.SERVICE }}/start.sh
         cat > $startup <<EOF
