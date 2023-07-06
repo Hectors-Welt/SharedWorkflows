@@ -58,7 +58,7 @@ jobs:
     
     - name: Build unit file & startup script
       run: |
-        startup=Publish/opt/hector/${{ env.NAME }}/start.sh
+        startup=Publish/opt/hector/${{ env.SERVICE }}/start.sh
         cat > $startup <<EOF
         #!/bin/bash
         [ -s "/home/services-user/.nvm/nvm.sh" ] && \. "/home/services-user/.nvm/nvm.sh"
