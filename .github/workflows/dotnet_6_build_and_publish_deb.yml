@@ -1,4 +1,4 @@
-name: Create v6 publish zip
+name: Create v6 publish deb
 
 on:
   workflow_call:
