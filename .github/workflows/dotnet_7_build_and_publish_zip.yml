@@ -1,4 +1,4 @@
-name: Create v6 publish zip
+name: Create v7 publish zip
 
 on:
   workflow_call:
@@ -36,10 +36,10 @@ jobs:
     
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: 7.x
 
@@ -68,7 +68,7 @@ jobs:
       
       - name: Build
         run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
-
+     
       - name: Zip build results
         run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .
 
