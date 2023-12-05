@@ -62,7 +62,16 @@ jobs:
           dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
           dotnet restore
           
-      - name: Build
-        run: dotnet test ${{ env.SERVICE }}.sln --filter TestCategory=Unit
+      - name: Build and test
+        run: dotnet test ${{ env.SERVICE }}.sln --filter TestCategory=Unit --logger "trx;LogFileName=test-results.trx" || true
+
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: DotNET Tests
+          path: "**/test-results.trx"                            
+          reporter: dotnet-trx
+          fail-on-error: false
 
       
