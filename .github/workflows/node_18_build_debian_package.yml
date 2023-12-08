@@ -44,7 +44,7 @@ jobs:
     - name: Build service
       run: |
         sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
-        PUPPETEER_SKIP_DOWNLOAD=true npm i
+        PUPPETEER_SKIP_DOWNLOAD=true npm i --force
         npm run build
         mkdir -p Publish/opt/hector/${{ env.SERVICE }}/node_modules
         cp -r dist/* Publish/opt/hector/${{ env.SERVICE }}
