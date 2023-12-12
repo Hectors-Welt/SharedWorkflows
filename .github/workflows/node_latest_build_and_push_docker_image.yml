@@ -118,6 +118,7 @@ jobs:
         context: .
         build-args: |
           SERVICE=${{ env.SERVICE }}
+          GITHUB_TOKEN=${{ secrets.packageRegistryToken }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:prerelease
         labels: ${{ steps.meta.outputs.labels }}
