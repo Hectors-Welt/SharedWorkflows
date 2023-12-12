@@ -64,7 +64,7 @@ jobs:
 
         COPY package*.json ./
         RUN echo //npm.pkg.github.com/:_authToken=${{ secrets.packageRegistryToken }} >> ~/.npmrc
-        RUN echo @hectors-welt:registry=https://npm.pkg.github.com/ >> ~/.npmrc
+        RUN echo @hectors-welt:registry=https://npm.pkg.github.com >> ~/.npmrc
         RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=dev --legacy-peer-deps  
 
         RUN echo > ~/.npmrc
