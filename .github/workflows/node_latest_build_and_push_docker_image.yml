@@ -9,6 +9,8 @@ on:
         required: true      
       nexusDockerPassword:
         required: true
+      packageRegistryToken:
+        required: true
  
 env:
   SERVICE: ${{ github.event.repository.name }}
@@ -55,27 +57,26 @@ jobs:
     - name: create docker file
       run: | 
         cat <<EOF >Dockerfile
+        ARG GITHUB_TOKEN
         FROM node:lts-alpine As development
         ENV NODE_ENV=production
         WORKDIR /usr/src/app
 
         COPY package*.json ./
-        COPY .npmrc ./.npmrc
+        RUN echo //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN >> ~/.npmrc
+        RUN echo @[USERNAME]:registry=https://npm.pkg.github.com/ >> ~/.npmrc
         RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=dev --legacy-peer-deps  
 
-        COPY . .
-        RUN npm run build
+        RUN echo > ~/.npmrc
+        ADD . /usr/src/app
+
+        RUN npm run build 
         
         FROM node:lts-alpine as production
         
         ENV NODE_ENV=production
 
         WORKDIR /usr/src/app
-        COPY package*.json ./
-        COPY .npmrc ./.npmrc
-        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=dev --legacy-peer-deps 
-
-        COPY . .
         COPY --from=development /usr/src/app/dist ./dist
 
         CMD ["node", "dist/src/main"]
@@ -104,6 +105,7 @@ jobs:
         context: .
         build-args: |
           SERVICE=${{ env.SERVICE }}
+          GITHUB_TOKEN=${{ secrets.packageRegistryToken }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:release
         labels: ${{ steps.meta.outputs.labels }}
