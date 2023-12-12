@@ -60,7 +60,7 @@ jobs:
         WORKDIR /usr/src/app
 
         COPY package*.json ./
-        COPY .npmrc ./.npmrc
+        COPY .npmrc /usr/src/app/.npmrc
         RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=dev --legacy-peer-deps 
 
         COPY . .
@@ -72,7 +72,7 @@ jobs:
 
         WORKDIR /usr/src/app
         COPY package*.json ./
-        COPY .npmrc ./.npmrc
+        COPY .npmrc /usr/src/app/.npmrc
         RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=dev --legacy-peer-deps 
 
         COPY . .
