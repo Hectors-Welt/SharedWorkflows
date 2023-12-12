@@ -61,17 +61,17 @@ jobs:
 
         COPY package*.json ./
         COPY .npmrc /usr/src/app/.npmrc
-        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=dev --legacy-peer-deps  && rm -f .npmrc
+        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=dev --legacy-peer-deps  
 
         COPY . .
-        RUN npm run build
-
+        
         FROM node:lts-alpine as production
         
         ENV NODE_ENV=production
 
         WORKDIR /usr/src/app
         COPY package*.json ./
+        COPY .npmrc /usr/src/app/.npmrc
         RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=dev --legacy-peer-deps 
 
         COPY . .
