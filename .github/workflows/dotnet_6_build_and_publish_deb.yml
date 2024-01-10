@@ -29,7 +29,6 @@ env:
         
 jobs:
   build_and_publish_deb:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -48,7 +47,7 @@ jobs:
           echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           if [[ -z "${NAME}" ]]; then
-          echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+            echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
 
       - name: Prepare environment variables
         if: startsWith(github.ref, 'refs/tags/prerelease-')
@@ -58,7 +57,7 @@ jobs:
           echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           if [[ -z "${NAME}" ]]; then
-          echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+            echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
 
       - name: add feeds
         run: |
