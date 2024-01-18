@@ -75,6 +75,6 @@ jobs:
     - name: Create prerelease NuGet Package
       if: startsWith(github.ref, 'refs/tags/prerelease-')
       run: 'dotnet pack -c Release /p:Version=${{ steps.get_prerelease_version.outputs.VERSION }}-prerelease'
-    
+      
     - name: Publish Nuget Package
-      run: dotnet nuget push ./bin/Release/*.nupkg -s ${{ secrets.nugetGithubHost }} -k ${{ secrets.nugetGithubToken }} --skip-duplicate --no-symbols true
+      run: dotnet nuget push ./bin/Release/*.snupkg -s ${{ secrets.nugetGithubHost }} -k ${{ secrets.nugetGithubToken }} --skip-duplicate --no-symbols true
