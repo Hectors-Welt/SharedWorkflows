@@ -1,0 +1,153 @@
+name: Create v6 publish deb
+
+on:
+  workflow_call:
+    secrets:
+      hangfireFeedUrl:
+        required: true  
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
+      nexusAptRepoHost:
+        required: true 
+      nexusAptRepoPrereleaseHost:
+        required: true  
+      nugetGithubHost:
+        required: true
+      nugetGithubUsername:
+        required: true
+      nugetGithubPassword:
+        required: true
+      nexusAptRepoStagingHost:
+        required: true
+ 
+env:
+  SERVICE: ${{ github.event.repository.name }}
+        
+jobs:
+  build_and_publish_deb:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.100
+      - name: test
+        run: 
+          echo $NAME
+          
+      - name: Prepare environment variables
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
+          echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+          echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
+          echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+
+      - name: Prepare environment variables
+        if: startsWith(github.ref, 'refs/tags/prerelease-')
+        run: |
+          echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
+          echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+          echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+          echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
+          echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
+
+      - name: add feeds
+        run: |
+          dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
+          dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
+          dotnet restore
+
+      - name: Publish service
+        run: >
+          dotnet publish ./src/${{ env.NAME }}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }}
+          -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}
+          
+      - name: Create file paths
+        run: |
+          mkdir -p Publish/etc/systemd/system/
+          mkdir Publish/DEBIAN
+          
+      - name: Create systemd unit
+        run: |
+          cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
+          [Unit]
+          Description=Hector ${{ env.NAME }}
+          After=network-online.target
+          Requires=network-online.target
+          
+          [Service]
+          EnvironmentFile=/etc/serviceEnvironment
+          WorkingDirectory=/opt/hector/${{ env.NAME }}
+          ExecStart=/opt/hector/${{ env.NAME }}/${{ env.NAME }}
+          TimeoutStopSec=1
+          Restart=always
+          RestartSec=5
+          
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+          
+      - name: Create postinstall script
+        run: |
+          cat << EOF > Publish/DEBIAN/postinst
+          #!/bin/sh
+          systemctl enable ${{env.NAME}}.service --now
+          EOF
+          chmod 755 Publish/DEBIAN/postinst
+          
+      - name: Create preremove script
+        run: |
+          cat << EOF > Publish/DEBIAN/prerm
+          #!/bin/sh
+          systemctl disable ${{env.NAME}}.service --now
+          EOF
+          chmod 755 Publish/DEBIAN/prerm
+          
+      - name: Set user and group to root
+        run: |
+          sudo chown -R root:root Publish
+          
+      - name: Build deb package
+        if: startsWith(github.ref, 'refs/tags/staging-')
+        id: package
+        uses: jiro4989/build-deb-action@v2
+        with:
+          package: ${{ env.NAME }}
+          package_root: Publish
+          maintainer: "Hectors-Welt GmbH"
+          version: ${{ env.VERSION }}
+          arch: "amd64"
+          desc: Hector ${{ env.NAME }}
+
+      - name: get package binarys from repo
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: debian_package
+        run: |
+          firstchar=`echo ${{env.NAME}} | cut -c1-1`
+          curl ${{ secrets.nexusAptRepoStagingHost }}pool/$firstchar/${{env.NAME}}/${{env.NAME}}_${{env.VERSION}}_amd64.deb --output ${{env.NAME}}_${{env.VERSION}}_amd64.deb 
+          
+      - name: push deb package to nexus apt repo
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@./${{env.NAME}}_${{env.VERSION}}_amd64.deb" "${{ secrets.nexusAptRepoHost  }}"
+
+      - name: push deb package to nexus apt repo
+        if: startsWith(github.ref, 'refs/tags/staging-')
+        run: |
+          curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoStagingHost  }}"
+
+      - name: push deb package to nexus apt repo
+        if: startsWith(github.ref, 'refs/tags/prerelease-')
+        run: |
+          curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoPrereleaseHost  }}"
