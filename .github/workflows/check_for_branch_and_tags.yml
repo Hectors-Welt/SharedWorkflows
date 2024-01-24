@@ -10,7 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check for branch
-        if: startsWith(github.ref, 'refs/tags/staging-') && ${{ secrets.branchName }} == 'develop'
+        env:
+          BRANCH_NAME: ${{ secrets.branchName }}
+        if: startsWith(github.ref, 'refs/tags/staging-') && ${{ env.BRANCH_NAME }} == 'develop'
         id: branch
         run: |
           echo "STATUS=success" >> $GITHUB_OUTPUT
