@@ -11,7 +11,7 @@ jobs:
         run: echo BRANCH=${GITHUB_REF##*/} >> $GITHUB_ENV
 
       - name: Check for branch
-        if: startsWith(github.ref, 'refs/tags/staging-') && env.BRANCH == 'main'
+        if: startsWith(github.ref, 'refs/tags/staging-') && env.BRANCH == 'develop'
         id: branch
         run: |
           echo "STATUS=success" >> $GITHUB_OUTPUT
