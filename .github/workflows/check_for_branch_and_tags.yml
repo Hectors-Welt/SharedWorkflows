@@ -8,10 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Extract branch name
-        run: echo BRANCH=${GITHUB_REF##*/} >> $GITHUB_ENV
-
+        id: branch_name
+        run: echo BRANCH_NAME=${GITHUB_REF##*/} >> $GITHUB_OUTPUT
+      
       - name: Check for branch
-        if: startsWith(github.ref, 'refs/tags/staging-') && env.BRANCH == 'develop'
+        if: startsWith(github.ref, 'refs/tags/staging-') steps.branch_name.outputs.BRANCH_NAME == 'develop'
         id: branch
         run: |
           echo "STATUS=success" >> $GITHUB_OUTPUT
