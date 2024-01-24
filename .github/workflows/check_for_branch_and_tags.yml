@@ -2,19 +2,15 @@ name: Check for branch and tags
 
 on:
   workflow_call:
-        
+    secrets:
+      branchName:
+        required: true  
 jobs:
   check_branch_and_tag:
     runs-on: ubuntu-latest
     steps:
-      - name: Extract branch name
-        id: branch_name
-        run: |
-          echo BRANCH_NAME=git rev-parse --abbrev-ref HEAD >> $GITHUB_OUTPUT
-          echo git rev-parse --abbrev-ref HEAD
-      
       - name: Check for branch
-        if: startsWith(github.ref, 'refs/tags/staging-') && steps.branch_name.outputs.BRANCH_NAME == 'develop'
+        if: startsWith(github.ref, 'refs/tags/staging-') && ${{ secrets.branchName }} == 'develop'
         id: branch
         run: |
           echo "STATUS=success" >> $GITHUB_OUTPUT
