@@ -1,0 +1,29 @@
+name: Check for branch and tags
+
+on:
+  workflow_call:
+        
+jobs:
+  check_branch_and_tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract branch name
+        run: echo BRANCH=${GITHUB_REF##*/} >> $GITHUB_ENV
+
+      - name: Check for branch
+        if: startsWith(github.ref, 'refs/tags/staging-') && env.BRANCH == 'main'
+        id: branch
+        run: |
+          echo "STATUS=success" >> $GITHUB_OUTPUT
+
+      - name: Check for conditioning tag
+        id: conditioning_tag
+        if: branch.outputs.STATUS == 'success'
+        run: |
+          echo LATEST_PRERELEASE_VERSION=git tag --list 'prerelease-*'   |git tag  --sort=taggerdate | tail -1 | cut -d '-' -f 2 >> $GITHUB_OUTPUT
+          echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_OUTPUT
+
+      - name: Check versions
+        if: branch.outputs.STATUS == 'success' && conditioning_tag.outputs.LATEST_PRERELEASE_VERSION == STAGING_VERSION
+        run: |
+          echo SUCCESS
