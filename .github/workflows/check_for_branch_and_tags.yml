@@ -18,12 +18,12 @@ jobs:
 
       - name: Check for conditioning tag
         id: conditioning_tag
-        if: branch.outputs.STATUS == 'success'
+        if: steps.branch.outputs.STATUS == 'success'
         run: |
           echo LATEST_PRERELEASE_VERSION=git tag --list 'prerelease-*'   |git tag  --sort=taggerdate | tail -1 | cut -d '-' -f 2 >> $GITHUB_OUTPUT
           echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_OUTPUT
 
       - name: Check versions
-        if: branch.outputs.STATUS == 'success' && conditioning_tag.outputs.LATEST_PRERELEASE_VERSION == STAGING_VERSION
+        if: steps.branch.outputs.STATUS == 'success' && steps.conditioning_tag.outputs.LATEST_PRERELEASE_VERSION == STAGING_VERSION
         run: |
           echo SUCCESS
