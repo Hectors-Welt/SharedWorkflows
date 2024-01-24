@@ -5,6 +5,10 @@ on:
     secrets:
       branchName:
         required: true  
+      latestPrerelease:
+        required: true 
+      version:
+        required: true  
 jobs:
   check_branch_and_tag:
     runs-on: ubuntu-latest
@@ -18,11 +22,14 @@ jobs:
           echo "STATUS=success" >> $GITHUB_OUTPUT
 
       - name: Check for conditioning tag
+        env:
+          LATEST_PRERELEASE: ${{ secrets.latestPrerelease }}
+          STAGING_VERSION:  ${{ secrets.version }}
         id: conditioning_tag
         if: steps.branch.outputs.STATUS == 'success'
         run: |
-          echo LATEST_PRERELEASE_VERSION=git tag --list 'prerelease-*'   |git tag  --sort=taggerdate | tail -1 | cut -d '-' -f 2 >> $GITHUB_OUTPUT
-          echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_OUTPUT
+          echo LATEST_PRERELEASE_VERSION=${{ env.LATEST_PRERELEASE }} >> $GITHUB_OUTPUT
+          echo STAGING_VERSION=${{ env.STAGING_VERSION }} >> $GITHUB_OUTPUT
 
       - name: Check versions
         if: steps.branch.outputs.STATUS == 'success' && steps.conditioning_tag.outputs.LATEST_PRERELEASE_VERSION == steps.conditioning_tag.outputs.STAGING_VERSION
