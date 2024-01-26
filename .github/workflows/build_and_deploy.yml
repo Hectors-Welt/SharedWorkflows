@@ -42,14 +42,17 @@ on:
 jobs:
   check:
      runs-on: ubuntu-latest
+     outputs:
+        runtime: ${{ steps.check_file.outputs.result }}
      steps:
       - name: Check if file was created
+        id: check_file
         run: |
           if [ -f package.json ]; then
-              echo "runtime=node" >> $GITHUB_OUTPUT
+              echo "result=node" >> $GITHUB_OUTPUT
               echo node
           else
-              echo "runtime=dotnet" >> $GITHUB_OUTPUT
+              echo "result=dotnet" >> $GITHUB_OUTPUT
               echo dotnet
           fi     
   debug:
