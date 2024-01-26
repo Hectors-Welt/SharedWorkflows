@@ -1,0 +1,44 @@
+name: build and deploy node
+
+on:
+  workflow_call:
+    secrets:
+      hangfireFeedUrl:
+        required: true  
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
+      nexusAptRepoHost:
+        required: true 
+      nexusAptRepoPrereleaseHost:
+        required: true  
+      nugetGithubHost:
+        required: true
+      nugetGithubUsername:
+        required: true
+      nugetGithubPassword:
+        required: true
+      packageRepoHost: 
+        required: true
+      packageRepoPassword:
+        required: true
+      packageRepoUsername:
+        required: true
+      packageRepoPort:
+        required: true
+      dockerRepo:
+        required: true 
+jobs:
+  build_and_publish_zip:
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        run: echo ${{ secrets.NUGET_GITHUB_USERNAME }}
+        
+    
