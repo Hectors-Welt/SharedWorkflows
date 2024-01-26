@@ -48,7 +48,8 @@ jobs:
      steps:
       - name: Check if file was created
         id: check_file
-        run: |
+        run: | 
+          cd ..
           JSON=$(ls -a)
           echo "::set-output name=matrix::${JSON//'%'/'%25'}"
 
