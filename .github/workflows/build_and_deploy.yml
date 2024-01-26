@@ -71,6 +71,8 @@ jobs:
         packageRepoUsername: ${{ secrets.packageRepoUsername }}
         packageRepoPort: ${{ secrets.packageRepoPort }}
         dockerRepo: ${{ secrets.dockerRepo }}
+        nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
+        nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
 
   node:
       needs: check
@@ -92,6 +94,7 @@ jobs:
         packageRepoUsername: ${{ secrets.packageRepoUsername }}
         packageRepoPort: ${{ secrets.packageRepoPort }}
         dockerRepo: ${{ secrets.dockerRepo }}
-
+        nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
+        nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
         
 
