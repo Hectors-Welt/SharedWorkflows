@@ -2,6 +2,38 @@ name: Build and deploy
 
 on:
   workflow_call:
+    secrets:
+      hangfireFeedUrl:
+        required: true  
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
+      nexusAptRepoHost:
+        required: true 
+      nexusAptRepoPrereleaseHost:
+        required: true  
+      nugetGithubHost:
+        required: true
+      nugetGithubUsername:
+        required: true
+      nugetGithubPassword:
+        required: true
+      packageRepoHost: 
+        required: true
+      packageRepoPassword:
+        required: true
+      packageRepoUsername:
+        required: true
+      packageRepoPort:
+        required: true
+      dockerRepo:
+        required: true        
+
 
 jobs:
   check:
@@ -12,11 +44,50 @@ jobs:
           if [ -f package.json ]; then
               echo "runtime=node" >> $GITHUB_OUTPUT
           else
-              echo "runtime=node" >> $GITHUB_OUTPUT
+              echo "runtime=dotnet" >> $GITHUB_OUTPUT
           fi     
       
-  build_and_deploy:
+  dotnet:
       needs: check
       if: needs.check.output.runtime == 'dotnet'
-      uses: Hectors-Welt/SharedWorkflows/.github/workflows/test.yml@main
+      uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_dotnet.yml@main
+      secrets:
+        nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
+        nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
+        nexusAptRepoPrereleaseHost: ${{ secrets.nexusAptRepoPrereleaseHost }}
+        nexusAptRepoHost: ${{ secrets.nexusAptRepoHost}}
+        hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
+        hangfireUsername: ${{ secrets.hangfireUsername }}
+        hangfirePassword: ${{ secrets.hangfirePassword }}
+        nugetGithubHost: ${{ secrets.nugetGithubHost }}
+        nugetGithubUsername: ${{ secrets.nugetGithubUsernam }}
+        nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
+        packageRepoHost: ${{ secrets.packageRepoHost }}
+        packageRepoPassword: ${{ secrets.packageRepoPassword }}
+        packageRepoUsername: ${{ secrets.packageRepoUsername }}
+        packageRepoPort: ${{ secrets.packageRepoPort }}
+        dockerRepo: ${{ secrets.dockerRepo }}
+
+  node:
+      needs: check
+      if: needs.check.output.runtime == 'node'
+      uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
+      secrets:
+        nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
+        nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
+        nexusAptRepoPrereleaseHost: ${{ secrets.nexusAptRepoPrereleaseHost }}
+        nexusAptRepoHost: ${{ secrets.nexusAptRepoHost}}
+        hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
+        hangfireUsername: ${{ secrets.hangfireUsername }}
+        hangfirePassword: ${{ secrets.hangfirePassword }}
+        nugetGithubHost: ${{ secrets.nugetGithubHost }}
+        nugetGithubUsername: ${{ secrets.nugetGithubUsernam }}
+        nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
+        packageRepoHost: ${{ secrets.packageRepoHost }}
+        packageRepoPassword: ${{ secrets.packageRepoPassword }}
+        packageRepoUsername: ${{ secrets.packageRepoUsername }}
+        packageRepoPort: ${{ secrets.packageRepoPort }}
+        dockerRepo: ${{ secrets.dockerRepo }}
+
+        
 
