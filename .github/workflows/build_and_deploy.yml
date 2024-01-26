@@ -57,7 +57,7 @@ jobs:
     needs: check
     steps:
       - env:
-          OUTPUT1: ${{needs.job1.outputs.runtime}}
+          OUTPUT1: ${{needs.check.outputs.runtime}}
         run: echo "$OUTPUT1"   
   dotnet:
       needs: check
