@@ -57,8 +57,9 @@ jobs:
               echo "result=dotnet" >> $GITHUB_OUTPUT
               echo dotnet
           fi      
-          echo file=$(find . -type f -name \*package.json ) >> $GITHUB_OUTPUT
-      - run:  echo ${{steps.check_file.outputs.file}}
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
   dotnet:
       needs: check
       if: ${{ needs.check.outputs.runtime == 'dotnet' }} 
