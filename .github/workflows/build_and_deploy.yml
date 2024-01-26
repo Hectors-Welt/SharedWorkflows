@@ -44,7 +44,6 @@ jobs:
      runs-on: ubuntu-latest
      outputs:
         runtime: ${{ steps.check_file.outputs.result }}
-        matrix: ${{steps.check_file.outputs.JSON }}
      steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -52,7 +51,7 @@ jobs:
       - name: Check if file was created
         id: check_file
         run: | 
-          if [ ls package.json 1> /dev/null 2>&1 ]; then
+          if [ -f package.json ]; then
               echo "result=node" >> $GITHUB_OUTPUT
               echo node
           else
