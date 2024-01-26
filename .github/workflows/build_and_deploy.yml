@@ -5,6 +5,6 @@ on:
 
 jobs:
    build_and_publish_deb:
-     if: ${{ hashFiles('**/package.json') }}
+     if: ${{ always() && hashFiles('package.json') }}
      uses: Hectors-Welt/SharedWorkflows/.github/workflows/test.yml@main
         
