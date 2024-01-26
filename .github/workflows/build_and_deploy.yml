@@ -52,17 +52,10 @@ jobs:
               echo "runtime=dotnet" >> $GITHUB_OUTPUT
               echo dotnet
           fi     
-      - name: Check directory
-        run: |
-          echo "RESULT=$(ls -a)" >> $GITHUB_OUTPUT
-        id: dir
-      - name: debug
-        run: |
-          echo  ${{ steps.dir.outputs.RESULT }}
       
   dotnet:
       needs: check
-      if: needs.check.output.runtime == 'dotnet'
+      if: needs.check.output.runtime == dotnet
       uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_dotnet.yml@main
       secrets:
         nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
@@ -85,7 +78,7 @@ jobs:
 
   node:
       needs: check
-      if: needs.check.output.runtime == 'node'
+      if: needs.check.output.runtime == node
       uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
       secrets:
         nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
