@@ -40,6 +40,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: test
-        run: echo ${{ secrets.NUGET_GITHUB_USERNAME }}
+        run: echo ${{ secrets.nugetGithubUsername }}
         
     
