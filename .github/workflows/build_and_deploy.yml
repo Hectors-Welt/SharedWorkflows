@@ -56,7 +56,23 @@ jobs:
               echo "result=dotnet" >> $GITHUB_OUTPUT
               echo dotnet
           fi      
+      - name: Checkout code
+        uses: actions/checkout@v2
 
+      - name: Check for Node.js project
+        id: is_node
+        run: echo "::set-output name=is_node::$(if ls package.json 1> /dev/null 2>&1; then echo true; else echo false; fi)"
+        shell: bash
+
+      - name: Check for .NET project
+        id: is_dotnet
+        run: echo "::set-output name=is_dotnet::$(if ls *.csproj *.vbproj *.fsproj 1> /dev/null 2>&1; then echo true; else echo false; fi)"
+        shell: bash
+
+      - name: Output result
+        run: |
+          echo "Is Node.js project: ${{ steps.is_node.outputs.is_node }}"
+          echo "Is .NET project: ${{ steps.is_dotnet.outputs.is_dotnet }}"
   dotnet:
       needs: check
       if: ${{ needs.check.outputs.runtime == 'dotnet' }} 
