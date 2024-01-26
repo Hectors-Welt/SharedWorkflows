@@ -1,0 +1,9 @@
+name: Build and deploy
+
+on:
+  workflow_call:
+
+jobs:
+   build_and_publish_deb:
+     uses: Hectors-Welt/SharedWorkflows/.github/workflows/test.yml@main
+        
