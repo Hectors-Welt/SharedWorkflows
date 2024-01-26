@@ -57,7 +57,7 @@ jobs:
               echo dotnet
           fi      
 
-      - run: find . -type f -name \*package.json == './package.json'
+      - run: find . -type f -name \*package.json 
   dotnet:
       needs: check
       if: ${{ needs.check.outputs.runtime == 'dotnet' }} 
