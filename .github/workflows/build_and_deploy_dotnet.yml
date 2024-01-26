@@ -1,7 +1,38 @@
-name: Create v6 prerelease
+name: build and deploy dotnet
 
 on:
   workflow_call:
+    secrets:
+      hangfireFeedUrl:
+        required: true  
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
+      nexusAptRepoHost:
+        required: true 
+      nexusAptRepoPrereleaseHost:
+        required: true  
+      nugetGithubHost:
+        required: true
+      nugetGithubUsername:
+        required: true
+      nugetGithubPassword:
+        required: true
+      packageRepoHost: 
+        required: true
+      packageRepoPassword:
+        required: true
+      packageRepoUsername:
+        required: true
+      packageRepoPort:
+        required: true
+      dockerRepo:
+        required: true 
       
 jobs:
   build_and_publish_zip:
