@@ -44,11 +44,14 @@ jobs:
      runs-on: ubuntu-latest
      outputs:
         runtime: ${{ steps.check_file.outputs.result }}
-        file: ${{steps.check_file.outputs.file }}
+        matrix: ${{steps.check_file.outputs.JSON }}
      steps:
       - name: Check if file was created
         id: check_file
         run: |
+          JSON=$(cat ./package.json)
+          echo "::set-output name=matrix::${JSON//'%'/'%25'}"
+
           if [[ -d src ]]; then
               echo "result=node" >> $GITHUB_OUTPUT
               echo node
@@ -58,6 +61,7 @@ jobs:
           fi      
       - name: List files in the repository
         run: |
+          echo ${{steps.check_file.outputs.matrix }}
           ls ${{ github.workspace }}
   dotnet:
       needs: check
