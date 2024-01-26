@@ -49,10 +49,6 @@ jobs:
       - name: Check if file was created
         id: check_file
         run: | 
-          cd ..
-          JSON=$(ls -a)
-          echo "::set-output name=matrix::${JSON//'%'/'%25'}"
-
           if [[ -d src ]]; then
               echo "result=node" >> $GITHUB_OUTPUT
               echo node
@@ -60,10 +56,7 @@ jobs:
               echo "result=dotnet" >> $GITHUB_OUTPUT
               echo dotnet
           fi      
-      - name: List files in the repository
-        run: |
-          echo ${{steps.check_file.outputs.matrix }}
-          ls ${{ github.workspace }}
+
   dotnet:
       needs: check
       if: ${{ needs.check.outputs.runtime == 'dotnet' }} 
