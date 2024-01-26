@@ -17,6 +17,6 @@ jobs:
           fi     
       
   build_and_deploy:
-      if: ${{needs.check.outputs.RUNTIME}} == 'node'
+      if: ${{needs.check.outputs.RUNTIME}} == 'dotnet'
       uses: Hectors-Welt/SharedWorkflows/.github/workflows/test.yml@main
 
