@@ -19,7 +19,7 @@ on:
         required: true  
       nexusDockerUsername:
         required: true  
-      nexusDockerPasword:
+      nexusDockerPassword:
         required: true 
       nugetGithubHost:
         required: true
