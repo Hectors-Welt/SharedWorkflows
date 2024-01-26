@@ -15,8 +15,12 @@ on:
         required: true
       nexusAptRepoHost:
         required: true 
-      nexusAptRepoPrereleaseHost:
+      nexusDockerUsername:
         required: true  
+      nexusDockerPasword:
+        required: true 
+      nexusAptRepoPrereleaseHost:
+        required: true    
       nugetGithubHost:
         required: true
       nugetGithubUsername:
