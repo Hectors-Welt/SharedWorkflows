@@ -52,8 +52,13 @@ jobs:
               echo "runtime=dotnet" >> $GITHUB_OUTPUT
               echo dotnet
           fi     
-      - run: ls
-
+      - name: Check directory
+        run: |
+          echo "RESULT=$(ls -a)" >> $GITHUB_OUTPUT
+        id: dir
+      - name: debug
+        run: |
+          echo  ${{ steps.dir.outputs.RESULT }}
       
   dotnet:
       needs: check
