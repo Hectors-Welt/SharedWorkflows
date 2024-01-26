@@ -49,7 +49,7 @@ jobs:
       - name: Check if file was created
         id: check_file
         run: |
-          JSON=$(cat ./package.json)
+          JSON=$(ls -a)
           echo "::set-output name=matrix::${JSON//'%'/'%25'}"
 
           if [[ -d src ]]; then
