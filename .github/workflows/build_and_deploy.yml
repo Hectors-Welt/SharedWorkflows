@@ -48,7 +48,7 @@ jobs:
       - name: Check if file was created
         id: check_file
         run: |
-          if [ -f package.json ]; then
+          if [ test -f "package.json" ]; then
               echo "result=node" >> $GITHUB_OUTPUT
               echo node
           else
