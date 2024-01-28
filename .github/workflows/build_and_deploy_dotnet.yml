@@ -39,11 +39,44 @@ on:
         required: true 
       
 jobs:
+  build_and_publish_docker:
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_push_docker_image.yml@main
+    secrets:
+      hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
+      hangfireUsername: ${{ secrets.hangfireUsername }}
+      hangfirePassword: ${{ secrets.hangfirePassword }}
+      nugetGithubHost: ${{ secrets.nugetGithubHost }}
+      nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
+      nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
+      dockerRepo: ${{ secrets.dockerRepo }}
+      nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
+      nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
+  
+  build_and_publish_deb:
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_debian_package.yml@main
+    secrets:
+      nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
+      nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
+      nexusAptRepoPrereleaseHost: ${{ secrets.nexusAptRepoPrereleaseHost }}
+      nexusAptRepoHost: ${{ secrets.nexusAptRepoHost}}
+      hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
+      hangfireUsername: ${{ secrets.hangfireUsername }}
+      hangfirePassword: ${{ secrets.hangfirePassword }}
+      nugetGithubHost: ${{ secrets.nugetGithubHost }}
+      nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
+      nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
+  
   build_and_publish_zip:
-
-    runs-on: ubuntu-latest
-    steps:
-      - name: test
-        run: echo ${{ secrets.nugetGithubUsername }}
-        
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_zip_package.yml@main
+    secrets:
+      packageRepoHost: ${{ secrets.packageRepoHost }}
+      packageRepoPassword: ${{ secrets.packageRepoPassword }}
+      packageRepoUsername: ${{ secrets.packageRepoUsername }}
+      packageRepoPort: ${{ secrets.packageRepoPort }}
+      hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
+      hangfireUsername: ${{ secrets.hangfireUsername }}
+      hangfirePassword: ${{ secrets.hangfirePassword }}
+      nugetGithubHost: ${{ secrets.nugetGithubHost }}
+      nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
+      nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
     
