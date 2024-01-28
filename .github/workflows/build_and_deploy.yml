@@ -93,7 +93,7 @@ jobs:
           fi
   
       - name: Check for branch
-        if: startsWith(github.ref, 'refs/tags/staging-') && ${{ env.BRANCH_NAME }} == feature-workflow
+        if: startsWith(github.ref, 'refs/tags/staging-') 
         id: branch
         run: |
           if [ "${{ env.BRANCH_NAME }}" == " test" ]; then
