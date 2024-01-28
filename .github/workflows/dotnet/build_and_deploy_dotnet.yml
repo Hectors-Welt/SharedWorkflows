@@ -40,7 +40,7 @@ on:
       
 jobs:
   build_and_publish_docker:
-    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_docker_image.yml@main
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet/dotnet_6_build_and_publish_docker_image.yml@main
     secrets:
       hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
       hangfireUsername: ${{ secrets.hangfireUsername }}
@@ -53,7 +53,7 @@ jobs:
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
   
   build_and_publish_deb:
-    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_debian_package.yml@main
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet/dotnet_6_build_and_publish_debian_package.yml@main
     secrets:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
       nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
@@ -67,7 +67,7 @@ jobs:
       nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
   
   build_and_publish_zip:
-    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_zip_package.yml@main
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet/dotnet_6_build_and_publish_zip_package.yml@main
     secrets:
       packageRepoHost: ${{ secrets.packageRepoHost }}
       packageRepoPassword: ${{ secrets.packageRepoPassword }}
