@@ -39,7 +39,7 @@ on:
         required: true 
 jobs:
   build_and_publish_docker:
-    uses: Hectors-Welt/SharedWorkflows/.github/workflows/node/node_latest_build_and_publish_docker_image.yml@main
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_docker_image.yml@main
     secrets:
       dockerRepo: ${{ secrets.DOCKER_REPO }}
       nexusDockerUsername: ${{ secrets.NEXUS_DOCKER_USERNAME }}
