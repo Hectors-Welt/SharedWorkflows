@@ -144,7 +144,7 @@ jobs:
   dotnet:
       needs: check_runtime
       if: ${{ needs.check_runtime.outputs.runtime == 'dotnet' }} 
-      uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet/build_and_deploy_dotnet.yml@main
+      uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_dotnet.yml@main
       secrets:
         nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
         nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
@@ -167,7 +167,7 @@ jobs:
   node:
       needs: check_runtime
       if: ${{ needs.check_runtime.outputs.runtime == 'node' }} 
-      uses: Hectors-Welt/SharedWorkflows/.github/workflows/node/build_and_deploy_node.yml@main
+      uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
       secrets:
         nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
         nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
