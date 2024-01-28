@@ -40,11 +40,97 @@ on:
 
 
 jobs:
-  check:
-     runs-on: ubuntu-latest
-     outputs:
+  check_if_commit_is_valid:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  
+
+      - name: Prepare env variables
+        id: version_and_commit
+        run: |
+          echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
+          echo CURRENT_COMMIT=$(git rev-parse HEAD) >> $GITHUB_ENV
+          echo STAGING_COMMIT=$(git rev-list -n 1 staging-${{ env.VERSION }}) >> $GITHUB_ENV
+
+      - name: Check for staging tag
+        id: staging_tag
+        run: |
+          if git rev-parse "staging-${{ env.VERSION }}" >/dev/null 2>&1; then
+            echo "STAGING_TAG_STATUS=success" >> $GITHUB_ENV
+          else  
+            echo "STAGING_TAG_STATUS=failure" >> $GITHUB_ENV
+          fi
+
+      - name: Check for commit
+        id: commit
+        run: |
+          if [ "${{ env.CURRENT_COMMIT }}" == "${{ env.STAGING_COMMIT }}" ]; then
+            echo "COMMIT_STATUS=success" >> $GITHUB_ENV
+          else  
+            echo "COMMIT_STATUS=failure" >> $GITHUB_ENV
+          fi
+
+      - name: Cancel workflow if conditions are not met
+        if: env.STAGING_TAG_STATUS == 'failure' || env.COMMIT_STATUS == 'failure'
+        run: |
+          echo "One or more conditions are not met, cancelling workflow."
+          exit 1
+          
+  check_for_branch_and_tags:
+    if: startsWith(github.ref, 'refs/tags/staging-')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare env variables
+        id: branch_name
+        run: |
+          raw=$(git branch -r --contains ${{ github.ref }})
+          echo BRANCH_NAME=${raw/origin\/}>> $GITHUB_ENV
+          echo LATEST_PRERELEASE_VERSION=$(git describe --match "prerelease-*" --abbrev=0 --tags $(git rev-list --tags --max-count=1)| cut -d '-' -f 2)>> $GITHUB_ENV
+          echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
+
+      - name: Check for branch
+        if: startsWith(github.ref, 'refs/tags/staging-') && ${{ env.BRANCH_NAME }} == feature-workflow
+        id: branch
+        run: |
+          if [ "${{ env.BRANCH_NAME }}" == " main" ]; then
+            echo "STATUS=success" >> $GITHUB_ENV
+          else  
+            echo "STATUS=failure" >> $GITHUB_ENV
+          fi
+
+      - name: Check for conditioning tag
+        id: conditioning_tag
+        run: |
+          if [ "${{ env.LATEST_PRERELEASE_VERSION }}" == "${{ env.STAGING_VERSION }}" ]; then
+            echo "TAG_STATUS=success" >> $GITHUB_ENV
+          else  
+            echo "TAG_STATUS=failure" >> $GITHUB_ENV
+          fi
+
+      - name: Check versions
+        if: env.TAG_STATUS == 'failure' || env.STATUS == 'failure'
+        run: |
+          echo "One or more conditions are not met, cancelling workflow."
+          exit 1
+
+  check_runtime:
+    needs: [check_if_commit_is_valid, check_for_branch_and_tags]
+    if: |
+      always() && (startsWith(github.ref, 'refs/tags/prerelease-') ||
+      ((needs.check_for_branch_and_tags.result == 'success' || needs.check_for_branch_and_tags.result == 'skipped') && 
+      (needs.check_for_staging_tag_and_commit.result == 'success' || needs.check_for_staging_tag_and_commit.result == 'skipped') && 
+      (needs.check_for_branch_and_tags.result != 'skipped' || needs.check_for_staging_tag_and_commit.result != 'skipped'))) 
+    runs-on: ubuntu-latest
+    outputs:
         runtime: ${{ steps.check_file.outputs.result }}
-     steps:
+    steps:
       - name: Checkout code
         uses: actions/checkout@v2
         
@@ -60,7 +146,7 @@ jobs:
           fi      
 
   dotnet:
-      needs: check
+      needs: check_runtime
       if: ${{ needs.check.outputs.runtime == 'dotnet' }} 
       uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_dotnet.yml@main
       secrets:
@@ -83,7 +169,7 @@ jobs:
         nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
 
   node:
-      needs: check
+      needs: check_runtime
       if: ${{ needs.check.outputs.runtime == 'node' }} 
       uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
       secrets:
