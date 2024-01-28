@@ -96,7 +96,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/staging-') && ${{ env.BRANCH_NAME }} == feature-workflow
         id: branch
         run: |
-          if [ "${{ env.BRANCH_NAME }}" == " main" ]; then
+          if [ "${{ env.BRANCH_NAME }}" == " test" ]; then
             echo "STATUS=success" >> $GITHUB_ENV
           else  
             echo "STATUS=failure" >> $GITHUB_ENV
