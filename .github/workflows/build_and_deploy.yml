@@ -38,24 +38,35 @@ on:
       dockerRepo:
         required: true        
 
-
 jobs:
   check_if_commit_is_valid:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{!startsWith(github.ref, 'refs/tags/prerelease-')}}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  
-
+  
       - name: Prepare env variables
+        if: startsWith(github.ref, 'refs/tags/v')
         id: version_and_commit
         run: |
           echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
           echo CURRENT_COMMIT=$(git rev-parse HEAD) >> $GITHUB_ENV
           echo STAGING_COMMIT=$(git rev-list -n 1 staging-${{ env.VERSION }}) >> $GITHUB_ENV
-
+  
+  
+      - name: Prepare env variables
+        if: startsWith(github.ref, 'refs/tags/staging-')
+        id: branch_name
+        run: |
+          raw=$(git branch -r --contains ${{ github.ref }})
+          echo BRANCH_NAME=${raw/origin\/}>> $GITHUB_ENV
+          echo LATEST_PRERELEASE_VERSION=$(git describe --match "prerelease-*" --abbrev=0 --tags $(git rev-list --tags --max-count=1)| cut -d '-' -f 2)>> $GITHUB_ENV
+          echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
+  
       - name: Check for staging tag
+        if: startsWith(github.ref, 'refs/tags/v')
         id: staging_tag
         run: |
           if git rev-parse "staging-${{ env.VERSION }}" >/dev/null 2>&1; then
@@ -63,38 +74,24 @@ jobs:
           else  
             echo "STAGING_TAG_STATUS=failure" >> $GITHUB_ENV
           fi
-
+  
       - name: Check for commit
+        if: startsWith(github.ref, 'refs/tags/v')
         id: commit
         run: |
           if [ "${{ env.CURRENT_COMMIT }}" == "${{ env.STAGING_COMMIT }}" ]; then
-            echo "COMMIT_STATUS=success" >> $GITHUB_ENV
+            commitStatus=success
           else  
-            echo "COMMIT_STATUS=failure" >> $GITHUB_ENV
+            commitStatus=failure
           fi
-
-      - name: Cancel workflow if conditions are not met
-        if: env.STAGING_TAG_STATUS == 'failure' || env.COMMIT_STATUS == 'failure'
-        run: |
-          echo "One or more conditions are not met, cancelling workflow."
-          exit 1
           
-  check_for_branch_and_tags:
-    if: startsWith(github.ref, 'refs/tags/staging-')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Prepare env variables
-        id: branch_name
-        run: |
-          raw=$(git branch -r --contains ${{ github.ref }})
-          echo BRANCH_NAME=${raw/origin\/}>> $GITHUB_ENV
-          echo LATEST_PRERELEASE_VERSION=$(git describe --match "prerelease-*" --abbrev=0 --tags $(git rev-list --tags --max-count=1)| cut -d '-' -f 2)>> $GITHUB_ENV
-          echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
-
+          if $commitStatus==failure; then
+            echo "One or more conditions are not met, cancelling workflow."
+            exit 1
+          else  
+            echo commit is valid
+          fi
+  
       - name: Check for branch
         if: startsWith(github.ref, 'refs/tags/staging-') && ${{ env.BRANCH_NAME }} == feature-workflow
         id: branch
@@ -104,8 +101,9 @@ jobs:
           else  
             echo "STATUS=failure" >> $GITHUB_ENV
           fi
-
+  
       - name: Check for conditioning tag
+        if: startsWith(github.ref, 'refs/tags/staging-')
         id: conditioning_tag
         run: |
           if [ "${{ env.LATEST_PRERELEASE_VERSION }}" == "${{ env.STAGING_VERSION }}" ]; then
@@ -113,20 +111,18 @@ jobs:
           else  
             echo "TAG_STATUS=failure" >> $GITHUB_ENV
           fi
-
+  
       - name: Check versions
-        if: env.TAG_STATUS == 'failure' || env.STATUS == 'failure'
+        if: (env.TAG_STATUS == 'failure' || env.STATUS == 'failure') && startsWith(github.ref, 'refs/tags/staging-')
         run: |
           echo "One or more conditions are not met, cancelling workflow."
           exit 1
-
+            
   check_runtime:
-    needs: [check_if_commit_is_valid, check_for_branch_and_tags]
+    needs: [check_if_commit_is_valid]
     if: |
-      always() && (startsWith(github.ref, 'refs/tags/prerelease-') ||
-      ((needs.check_for_branch_and_tags.result == 'success' || needs.check_for_branch_and_tags.result == 'skipped') && 
-      (needs.check_for_staging_tag_and_commit.result == 'success' || needs.check_for_staging_tag_and_commit.result == 'skipped') && 
-      (needs.check_for_branch_and_tags.result != 'skipped' || needs.check_for_staging_tag_and_commit.result != 'skipped'))) 
+      always() &&
+      (needs.check_if_commit_is_valid.result == 'success' || needs.check_if_commit_is_valid.result == 'skipped') 
     runs-on: ubuntu-latest
     outputs:
         runtime: ${{ steps.check_file.outputs.result }}
