@@ -38,11 +38,12 @@ on:
       dockerRepo:
         required: true 
 jobs:
-  build_and_publish_zip:
-
-    runs-on: ubuntu-latest
-    steps:
-      - name: test
-        run: echo ${{ secrets.nexusAptRepoPrereleaseHost }}
+  build_and_publish_docker:
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_push_docker_image.yml@main
+    secrets:
+      dockerRepo: ${{ secrets.DOCKER_REPO }}
+      nexusDockerUsername: ${{ secrets.NEXUS_DOCKER_USERNAME }}
+      nexusDockerPassword: ${{ secrets.NEXUS_DOCKER_PASSWORD }}
+      packageRegistryToken: ${{ secrets.PACKAGE_REGISTRY_TOKEN }}
         
     
