@@ -40,7 +40,7 @@ on:
       
 jobs:
   build_and_publish_docker:
-    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_push_docker_image.yml@main
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_docker_image.yml@main
     secrets:
       hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
       hangfireUsername: ${{ secrets.hangfireUsername }}
