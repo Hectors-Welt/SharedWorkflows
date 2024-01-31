@@ -62,6 +62,27 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
 
+      - name: Check if hotfix
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: hotfix_check
+        run: |
+          # Get the latest version with the prefix "v-"
+          LATEST_VERSION=$(git tag | grep "^v-" | sort -V | tail -n 1 | cut -d '-' -f 2)
+      
+          # Get the current version (remove the "v-" prefix)
+          CURRENT_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v-/})
+      
+          # Get the patch versions
+          LATEST_PATCH_VERSION=$(echo $LATEST_VERSION | cut -d '.' -f 3)
+          CURRENT_PATCH_VERSION=$(echo $CURRENT_VERSION | cut -d '.' -f 3)
+      
+          # Check if the current patch version is one higher than the latest patch version
+          if [[ $((CURRENT_PATCH_VERSION)) == $((LATEST_PATCH_VERSION + 1)) ]]; then
+            echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+          else
+            echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
+          fi   
+  
       - name: add feeds
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
@@ -69,16 +90,19 @@ jobs:
           dotnet restore
 
       - name: Publish service
+        if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
         run: >
           dotnet publish ./src/${{ env.NAME }}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }}
           -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}
           
       - name: Create file paths
+        if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
         run: |
           mkdir -p Publish/etc/systemd/system/
           mkdir Publish/DEBIAN
           
       - name: Create systemd unit
+        if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
         run: |
           cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
           [Unit]
@@ -99,6 +123,7 @@ jobs:
           EOF
           
       - name: Create postinstall script
+        if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
         run: |
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
@@ -107,6 +132,7 @@ jobs:
           chmod 755 Publish/DEBIAN/postinst
           
       - name: Create preremove script
+        if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
         run: |
           cat << EOF > Publish/DEBIAN/prerm
           #!/bin/sh
@@ -115,11 +141,12 @@ jobs:
           chmod 755 Publish/DEBIAN/prerm
           
       - name: Set user and group to root
+        if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
         run: |
           sudo chown -R root:root Publish
           
       - name: Build deb package
-        if: startsWith(github.ref, 'refs/tags/staging-')
+        if: startsWith(github.ref, 'refs/tags/staging-') || startsWith(github.ref, 'refs/tags/prerelease-')
         id: package
         uses: jiro4989/build-deb-action@v2
         with:
@@ -130,17 +157,34 @@ jobs:
           arch: "amd64"
           desc: Hector ${{ env.NAME }}
 
+      - name: Build deb package
+        if: startsWith(github.ref, 'refs/tags/v-') && ${{env.HOTFIX_STATUS =='success'}}
+        id: hotfix
+        uses: jiro4989/build-deb-action@v2
+        with:
+          package: ${{ env.NAME }}
+          package_root: Publish
+          maintainer: "Hectors-Welt GmbH"
+          version: ${{ env.VERSION }}
+          arch: "amd64"
+          desc: Hector ${{ env.NAME }}
+
       - name: get package binarys from repo
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && ${{env.HOTFIX_STATUS =='failure'}}
         id: debian_package
         run: |
           firstchar=`echo ${{env.NAME}} | cut -c1-1`
           curl ${{ secrets.nexusAptRepoStagingHost }}pool/$firstchar/${{env.NAME}}/${{env.NAME}}_${{env.VERSION}}_amd64.deb --output ${{env.NAME}}_${{env.VERSION}}_amd64.deb 
           
       - name: push deb package to nexus apt repo
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && ${{env.HOTFIX_STATUS =='failure'}}
         run: |
           curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@./${{env.NAME}}_${{env.VERSION}}_amd64.deb" "${{ secrets.nexusAptRepoHost  }}"
+      
+      - name: push deb package to nexus apt repo
+        if: startsWith(github.ref, 'refs/tags/v-') && ${{env.HOTFIX_STATUS =='success'}}
+        run: |
+          curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoHost  }}"
 
       - name: push deb package to nexus apt repo
         if: startsWith(github.ref, 'refs/tags/staging-')
