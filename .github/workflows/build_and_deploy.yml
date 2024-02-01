@@ -144,7 +144,6 @@ jobs:
           fi        
           
   dotnet:
-    needs: check_runtime
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_dotnet.yml@main
     secrets:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
