@@ -29,6 +29,7 @@ env:
 
 jobs:
   build_and_push_docker_image:
+    if: ${{!startsWith(github.ref, 'refs/tags/staging-')}}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -58,15 +59,6 @@ jobs:
       run: |
         echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
         echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
-        echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
-        echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
-        echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
-
-    - name: Prepare environment variables
-      if: startsWith(github.ref, 'refs/tags/staging-')
-      run: |
-        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
-        echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
         echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
