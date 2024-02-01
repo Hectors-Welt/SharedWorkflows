@@ -17,7 +17,7 @@ on:
         required: true 
       nexusAptRepoPrereleaseHost:
         required: true  
-      nexusAptRepoHostStaging: 
+      nexusAptRepoStagingHost: 
         required: true
       nexusDockerUsername:
         required: true  
@@ -54,8 +54,8 @@ jobs:
         nexusAptRepoUsername: ${{ secrets.NEXUS_APT_REPO_USERNAME }}
         nexusAptRepoPassword: ${{ secrets.NEXUS_APT_REPO_PASSWORD }}
         nexusAptRepoHost: ${{ secrets.NEXUS_APT_REPO_HOST }}
-        nexusAptRepoHostPrerelease: ${{ secrets.NEXUS_APT_REPO_HOST_PRERELEASE }} 
-        nexusAptRepoHostStaging: ${{ secrets.NEXUS_APT_REPO_HOST_STAGING }}
+        nexusAptRepoPrereleaseHost: ${{ secrets.NEXUS_APT_REPO_HOST_PRERELEASE }} 
+        nexusAptRepoStagingHost: ${{ secrets.NEXUS_APT_REPO_HOST_STAGING }}
         
   build_deb_and_zip:
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_zip.yml@main
