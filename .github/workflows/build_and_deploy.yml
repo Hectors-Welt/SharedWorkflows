@@ -175,6 +175,7 @@ jobs:
         nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
         nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
         nexusAptRepoPrereleaseHost: ${{ secrets.nexusAptRepoPrereleaseHost }}
+        nexusAptRepoStagingHost: ${{ secrets.nexusAptRepoStagingHost }}
         nexusAptRepoHost: ${{ secrets.nexusAptRepoHost}}
         hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
         hangfireUsername: ${{ secrets.hangfireUsername }}
