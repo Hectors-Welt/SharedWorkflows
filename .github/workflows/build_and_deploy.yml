@@ -142,11 +142,11 @@ jobs:
               echo "result=dotnet" >> $GITHUB_OUTPUT
               echo dotnet
           fi    
+          
   debug_runtime:
     if: |
       always() &&
       (needs.check_runtime.result == 'success' || needs.check_runtime.result == 'skipped')
-      && ${{ needs.check_runtime.outputs.runtime == 'dotnet' }} 
     needs: check_runtime
     runs-on: ubuntu-latest
     steps:
