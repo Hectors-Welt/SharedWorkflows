@@ -142,7 +142,13 @@ jobs:
               echo "result=dotnet" >> $GITHUB_OUTPUT
               echo dotnet
           fi    
-
+  debug_runtime:
+    runs-on: ubuntu-latest
+    steps:
+    - name: debug
+      run: |
+        echo ${{needs.check_runtime.outputs.runtime}}
+       
   dotnet:
     needs: check_runtime
     if: ${{ needs.check_runtime.outputs.runtime == 'dotnet' }}  
