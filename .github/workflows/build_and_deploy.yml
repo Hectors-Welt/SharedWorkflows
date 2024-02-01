@@ -46,6 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  
   
       - name: Prepare env variables
         if: startsWith(github.ref, 'refs/tags/v')
@@ -61,9 +63,7 @@ jobs:
         id: branch_name
         run: |
           raw=$(git branch -r --contains ${{ github.ref }})
-          TAG=$(git describe --tags --exact-match)
-          BRANCH=$(git rev-list --branches --contains $TAG)
-          echo "BRANCH_NAME=$BRANCH" >> $GITHUB_ENV          
+          echo BRANCH_NAME=${raw/origin\/}>> $GITHUB_ENV
           echo LATEST_PRERELEASE_VERSION=$(git describe --match "prerelease-*" --abbrev=0 --tags $(git rev-list --tags --max-count=1)| cut -d '-' -f 2)>> $GITHUB_ENV
           echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
   
