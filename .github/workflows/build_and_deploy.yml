@@ -136,24 +136,13 @@ jobs:
         id: check_file
         run: | 
           if [ -f package.json ]; then
-              echo "result=node" >> $GITHUB_OUTPUT
-              echo node
+            echo "::set-output name=result::node"
+            echo node
           else
-              echo "result=dotnet" >> $GITHUB_OUTPUT
-              echo dotnet
-          fi    
+            echo "::set-output name=result::dotnet"
+            echo dotnet
+          fi        
           
-  debug_runtime:
-    if: |
-      always() &&
-      (needs.check_runtime.result == 'success' || needs.check_runtime.result == 'skipped')
-    needs: check_runtime
-    runs-on: ubuntu-latest
-    steps:
-    - name: debug
-      run: |
-        echo ${{needs.check_runtime.outputs.runtime}}
-       
   dotnet:
     needs: check_runtime
     if: ${{ needs.check_runtime.outputs.runtime == 'dotnet' }}  
