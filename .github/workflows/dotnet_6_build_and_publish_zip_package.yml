@@ -30,7 +30,9 @@ env:
 jobs:
    build_and_publish_zip:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./src
     
     steps:
       - name: Checkout sources
