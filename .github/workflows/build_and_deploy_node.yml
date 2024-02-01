@@ -17,6 +17,8 @@ on:
         required: true 
       nexusAptRepoPrereleaseHost:
         required: true  
+      nexusAptRepoHostStaging: 
+        required: true
       nexusDockerUsername:
         required: true  
       nexusDockerPassword:
