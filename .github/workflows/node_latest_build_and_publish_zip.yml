@@ -3,12 +3,6 @@ name: build and publish zip
 on:
   workflow_call:
     secrets:
-      nugetGithubHost:
-        required: true
-      nugetGithubUsername:
-        required: true
-      nugetGithubPassword:
-        required: true
       packageRepoHost: 
         required: true
       packageRepoPassword:
