@@ -9,9 +9,10 @@ on:
         required: true
       nexusAptRepoHost:
         required: true        
-      nexusAptRepoHostPrerelease:
+      nexusAptRepoPrereleaseHost:
         required: true      
-
+      nexusAptRepoStagingHost:
+        required: true    
 env:
   SERVICE: ${{ github.event.repository.name }}
 
