@@ -143,6 +143,7 @@ jobs:
               echo dotnet
           fi    
   debug_runtime:
+    needs: check_runtime
     runs-on: ubuntu-latest
     steps:
     - name: debug
