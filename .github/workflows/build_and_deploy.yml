@@ -162,7 +162,7 @@ jobs:
       hangfireUsername: ${{ secrets.hangfireUsername }}
       hangfirePassword: ${{ secrets.hangfirePassword }}
       nugetGithubHost: ${{ secrets.nugetGithubHost }}
-      nugetGithubUsername: ${{ secrets.nugetGithubUsernam }}
+      nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
       nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
       packageRepoHost: ${{ secrets.packageRepoHost }}
       packageRepoPassword: ${{ secrets.packageRepoPassword }}
@@ -186,7 +186,7 @@ jobs:
       hangfireUsername: ${{ secrets.hangfireUsername }}
       hangfirePassword: ${{ secrets.hangfirePassword }}
       nugetGithubHost: ${{ secrets.nugetGithubHost }}
-      nugetGithubUsername: ${{ secrets.nugetGithubUsernam }}
+      nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
       nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
       packageRepoHost: ${{ secrets.packageRepoHost }}
       packageRepoPassword: ${{ secrets.packageRepoPassword }}
