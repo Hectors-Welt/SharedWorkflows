@@ -121,7 +121,7 @@ jobs:
           exit 1
             
   check_runtime:
-    needs: [check_if_commit_is_valid]
+    needs: check_if_commit_is_valid
     if: |
       always() &&
       (needs.check_if_commit_is_valid.result == 'success' || needs.check_if_commit_is_valid.result == 'skipped') 
@@ -143,6 +143,10 @@ jobs:
               echo dotnet
           fi    
   debug_runtime:
+    if: |
+      always() &&
+      (needs.check_runtime.result == 'success' || needs.check_runtime.result == 'skipped')
+      && ${{ needs.check_runtime.outputs.runtime == 'dotnet' }} 
     needs: check_runtime
     runs-on: ubuntu-latest
     steps:
