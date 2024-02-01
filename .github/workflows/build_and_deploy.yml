@@ -63,7 +63,7 @@ jobs:
         id: branch_name
         run: |
           raw=$(git branch -r --contains ${{ github.ref }})
-          echo BRANCH_NAME=${raw/origin\/}>> $GITHUB_ENV
+          echo BRANCH_NAME=${GITHUB_REF#refs/heads/}>> $GITHUB_ENV
           echo LATEST_PRERELEASE_VERSION=$(git describe --match "prerelease-*" --abbrev=0 --tags $(git rev-list --tags --max-count=1)| cut -d '-' -f 2)>> $GITHUB_ENV
           echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
   
