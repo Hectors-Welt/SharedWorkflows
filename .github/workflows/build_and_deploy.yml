@@ -146,7 +146,7 @@ jobs:
   dotnet:
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_dotnet.yml@main
     needs: [check_runtime]
-    if: ${{ needs.check_runtime.outputs.runtime == dotnet }}
+    if: ${{ needs.check_runtime.outputs.runtime == 'dotnet' }}
     secrets:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
       nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
