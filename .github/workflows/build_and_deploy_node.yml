@@ -37,24 +37,8 @@ on:
         required: true
       dockerRepo:
         required: true 
-jobs:
-  get_node_version:
-    runs-on: ubuntu-latest
-    outputs:
-      node_version: ${{ steps.node_version.outputs.node_version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-  
-      - name: Get Node.js version
-        id: node_version
-        run: |
-          NODE_VERSION=$(jq -r .engines.node package.json)
-          echo "NODE_VERSION=$NODE_VERSION" >> $GITHUB_ENV
-          
+jobs:     
   build_and_publish_docker:
-    needs: get_node_version
-    if: ${{env.NODE_VERSION == '18'}}
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_docker_image.yml@main
     secrets:
       dockerRepo: ${{ secrets.DOCKER_REPO }}
@@ -63,8 +47,6 @@ jobs:
       packageRegistryToken: ${{ secrets.PACKAGE_REGISTRY_TOKEN }}
         
   build_debian_package:
-      needs: get_node_version
-      if: ${{env.NODE_VERSION == '18'}}
       uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_18_build_debian_package.yml@main
       secrets:
         nexusAptRepoUsername: ${{ secrets.NEXUS_APT_REPO_USERNAME }}
@@ -72,35 +54,3 @@ jobs:
         nexusAptRepoHost: ${{ secrets.NEXUS_APT_REPO_HOST }}
         nexusAptRepoHostPrerelease: ${{ secrets.NEXUS_APT_REPO_HOST_PRERELEASE }} 
         nexusAptRepoHostStaging: ${{ secrets.NEXUS_APT_REPO_HOST_STAGING }}
-
-  build_and_push_docker_image:
-    needs: get_node_version
-    if: ${{env.NODE_VERSION == '16'}}
-    uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_16_build_and_push_docker_image.yml@main
-    secrets:
-      dockerRepo: ${{ secrets.DOCKER_REPO }}
-      nexusDockerUsername: ${{ secrets.NEXUS_DOCKER_USERNAME }}
-      nexusDockerPassword: ${{ secrets.NEXUS_DOCKER_PASSWORD }}
-      nugetGithubUsername: ${{ secrets.NUGET_GITHUB_USERNAME }}
-      nugetGithubPassword: ${{ secrets.NUGET_GITHUB_PASSWORD }}
-
-  build_zip_package:
-    needs: get_node_version
-    if: ${{env.NODE_VERSION == '16'}}
-    uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_16_build_zip_package.yml@main
-    secrets:
-      packageRepoHost: ${{ secrets.PACKAGE_REPO_HOST }}
-      packageRepoPassword: ${{ secrets.PACKAGE_REPO_PASSWORD }}
-      packageRepoUsername: ${{ secrets.PACKAGE_REPO_USERNAME }}
-      packageRepoPort: ${{ secrets.PACKAGE_REPO_PORT }}
-      
-  build_debian:
-    needs: get_node_version
-    if: ${{env.NODE_VERSION == '16'}}
-    uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_16_build_debian_package.yml@main
-    secrets:
-      nexusAptRepoUsername: ${{ secrets.NEXUS_APT_REPO_USERNAME }}
-      nexusAptRepoPassword: ${{ secrets.NEXUS_APT_REPO_PASSWORD }}
-      nexusAptRepoHost: ${{ secrets.NEXUS_APT_REPO_HOST }}
-      nexusAptRepoHostPrerelease: ${{ secrets.NEXUS_APT_REPO_HOST_PRERELEASE }} 
-      nexusAptRepoHostStaging: ${{ secrets.NEXUS_APT_REPO_HOST_STAGING }}
