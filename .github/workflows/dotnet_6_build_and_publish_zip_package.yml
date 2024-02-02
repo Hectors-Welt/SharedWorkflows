@@ -82,7 +82,10 @@ jobs:
             COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
             RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$COMMIT_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
             echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
+            RUN_NUMBER_CLEAN=$(echo $RUN_NUMBER | tr -d "'")
             echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
+            echo "STAGING_RUN_NUMBER_CLEAN=(echo $STAGING_RUN_NUMBER | tr -d "'") >> $GITHUB_ENV
+
           else
             echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
           fi
@@ -125,7 +128,7 @@ jobs:
       - name: Zip build results
         if:  ${{ startsWith(github.ref, 'refs/tags/v') &&  env.HOTFIX_STATUS =='failure'}}
         run: |
-           curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/${{env.NAME}}/${{env.NAME}}-${{ env.BASE_VERSION }}.${{env.STAGING_RUN_NUMBER}}.zip --output ${{env.NAME}}-${{env.VERSION}}.zip
+           curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/${{env.NAME}}/${{env.NAME}}-${{ env.BASE_VERSION }}.${{env.STAGING_RUN_NUMBER_CLEAN}}.zip --output ${{env.NAME}}-${{env.VERSION}}.zip
 
       - name: copy file via ssh password
         if: startsWith(github.ref, 'refs/tags/staging-')
