@@ -38,6 +38,8 @@ on:
       packageRepoPort:
         required: true
       dockerRepo:
+        required: true         
+      githubToken:
         required: true        
 
 jobs:
@@ -81,12 +83,10 @@ jobs:
           
       - name: Get branch name
         id: get_branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           COMMIT_SHA="${{ github.sha }}"
           REPO="${{ github.repository }}"
-          BRANCH_NAME=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/commits/$COMMIT_SHA | jq -r '.commit.message')
+          BRANCH_NAME=$(curl -H "Authorization: token ${{ secrets.githubToken }}" https://api.github.com/repos/$REPO/commits/$COMMIT_SHA | jq -r '.commit.message')
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
           
       - name: branch
