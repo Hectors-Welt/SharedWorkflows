@@ -80,17 +80,6 @@ jobs:
           else  
             echo "TAG_STATUS=failure" >> $GITHUB_ENV
           fi
-          
-      - name: Get branch name
-        id: get_branch
-        run: |
-          COMMIT_SHA="${{ github.sha }}"
-          REPO="${{ github.repository }}"
-          BRANCH_NAME=$(curl -H "Authorization: token ${{ secrets.githubToken }}" https://api.github.com/repos/$REPO/commits/$COMMIT_SHA | jq -r '.commit.message')
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-          
-      - name: branch
-        run: echo ${{env.BRANCH_NAME}}
 
       - name: Check for conditioning tag
         if: startsWith(github.ref, 'refs/tags/staging-')
