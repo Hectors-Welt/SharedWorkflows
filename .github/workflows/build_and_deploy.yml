@@ -49,15 +49,6 @@ jobs:
           fetch-depth: 0  
   
       - name: Prepare env variables
-        if: startsWith(github.ref, 'refs/tags/v')
-        id: version_and_commit
-        run: |
-          echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
-          echo CURRENT_COMMIT=$(git rev-parse HEAD) >> $GITHUB_ENV
-          echo STAGING_COMMIT=$(git rev-list -n 1 staging-${{ env.VERSION }}) >> $GITHUB_ENV
-  
-      - name: Prepare env variables
-        if: startsWith(github.ref, 'refs/tags/staging-') || startsWith(github.ref, 'refs/tags/prerelease-')
         id: branch_name
         run: |
           commit=$(git rev-list -n 1 ${{ github.ref }})
@@ -65,6 +56,9 @@ jobs:
           echo BRANCH_NAME=$branch >> $GITHUB_ENV
           echo LATEST_PRERELEASE_VERSION=$(git describe --match "prerelease-*" --abbrev=0 --tags $(git rev-list --tags --max-count=1)| cut -d '-' -f 2)>> $GITHUB_ENV
           echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
+          echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
+          echo CURRENT_COMMIT=$(git rev-parse HEAD) >> $GITHUB_ENV
+          echo STAGING_COMMIT=$(git rev-list -n 1 staging-${{ env.VERSION }}) >> $GITHUB_ENV
   
       - name: Check for staging tag
         if: startsWith(github.ref, 'refs/tags/v')
