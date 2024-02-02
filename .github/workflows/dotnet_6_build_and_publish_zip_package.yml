@@ -77,9 +77,8 @@ jobs:
           TAG_VERSION=${{ env.VERSION }}
           STAGING_TAG_NAME="staging-$TAG_VERSION"
           REPO=${{ github.repository }}
-          API_RESPONSE=$(curl -H "Authorization: token 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" https://api.github.com/repos/TestService/git/ref/tags/staging-6.0.0)
+          API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN"  https://api.github.com/repos/TestService/git/ref/tags/staging-6.0.0)
           if [[ $API_RESPONSE == *"ref"* ]]; then
-            
             TAG_VERSION=${{ env.VERSION }}
             STAGING_TAG_NAME="staging-$TAG_VERSION"
             REPO=${{ github.repository }}
@@ -94,7 +93,7 @@ jobs:
       - uses: octokit/request-action@v2.x
         id: add_pr_comment
         with:
-          route: GET /repos/$REPO/git/ref/tags/$STAGING_TAG_NAME
+          route: GET /repos/${{ github.repository }}/git/ref/tags/staging-${{env.BASE_VERSION}}
           repository: ${{ github.repository }}
           issue_number: ${{ github.event.number }}
         env:
