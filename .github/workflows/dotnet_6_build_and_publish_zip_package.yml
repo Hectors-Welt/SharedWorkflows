@@ -79,9 +79,13 @@ jobs:
           REPO=${{ github.repository }}
           API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
           if [[ $API_RESPONSE == *"ref"* ]]; then
-            COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
-            RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$COMMIT_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
-            echo "STAGING_RUN_NUMBER=$RUN_NUMBER" >> $GITHUB_ENV
+            
+            TAG_VERSION=${{ env.VERSION }}
+            STAGING_TAG_NAME="staging-$TAG_VERSION"
+            REPO=${{ github.repository }}
+            COMMIT_SHA=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME | jq -r '.object.sha')
+            STAGING_RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '.workflow_runs[] | select(.head_sha == "'$COMMIT_SHA'") | .run_number')
+            echo "STAGING_RUN_NUMBER=$STAGING_RUN_NUMBER" >> $GITHUB_ENV
           else
             echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
           fi
@@ -124,7 +128,7 @@ jobs:
       - name: Zip build results
         if:  ${{ startsWith(github.ref, 'refs/tags/v') &&  env.HOTFIX_STATUS =='failure'}}
         run: |
-           curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/${{env.NAME}}/${{env.NAME}}-${{env.STAGING_RUN_NUMBER}}.zip --output ${{env.NAME}}-${{env.VERSION}}.zip
+           curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/${{env.NAME}}/${{env.NAME}}-${{ env.BASE_VERSION }}.${{env.STAGING_RUN_NUMBER}}.zip --output ${{env.NAME}}-${{env.VERSION}}.zip
 
       - name: copy file via ssh password
         if: startsWith(github.ref, 'refs/tags/staging-')
