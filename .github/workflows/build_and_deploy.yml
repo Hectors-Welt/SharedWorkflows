@@ -38,9 +38,7 @@ on:
       packageRepoPort:
         required: true
       dockerRepo:
-        required: true         
-      githubToken:
-        required: true        
+        required: true                
 
 jobs:
   check_if_commit_is_valid:
