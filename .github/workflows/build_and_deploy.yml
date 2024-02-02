@@ -78,15 +78,17 @@ jobs:
           else  
             echo "TAG_STATUS=failure" >> $GITHUB_ENV
           fi
-
-      - name: check branch
+          
+      - name: Get branch name
+        id: get_branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          REPO=${{ github.repository }}
-          COMMIT_SHA=$GITHUB_SHA
-          BRANCH_NAME=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/commits/$COMMIT_SHA | jq -r '.commit.message') >> $GITHUB_ENV
-
+          COMMIT_SHA="${{ github.sha }}"
+          REPO="${{ github.repository }}"
+          BRANCH_NAME=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/commits/$COMMIT_SHA | jq -r '.commit.message')
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          
       - name: branch
         run: echo ${{env.BRANCH_NAME}}
 
