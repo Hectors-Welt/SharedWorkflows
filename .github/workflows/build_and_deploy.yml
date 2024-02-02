@@ -42,7 +42,6 @@ on:
 
 jobs:
   check_if_commit_is_valid:
-    if: ${{!startsWith(github.ref, 'refs/tags/prerelease-')}}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
