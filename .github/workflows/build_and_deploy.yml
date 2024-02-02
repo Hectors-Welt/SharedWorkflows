@@ -56,9 +56,8 @@ jobs:
           echo CURRENT_COMMIT=$(git rev-parse HEAD) >> $GITHUB_ENV
           echo STAGING_COMMIT=$(git rev-list -n 1 staging-${{ env.VERSION }}) >> $GITHUB_ENV
   
-  
       - name: Prepare env variables
-        if: startsWith(github.ref, 'refs/tags/staging-')
+        if: startsWith(github.ref, 'refs/tags/staging-') || startsWith(github.ref, 'refs/tags/prerelease-')
         id: branch_name
         run: |
           commit=$(git rev-list -n 1 ${{ github.ref }})
@@ -103,7 +102,17 @@ jobs:
           else  
             echo "STATUS=failure" >> $GITHUB_ENV
           fi
-  
+          
+      - name: Check for branch
+        if: startsWith(github.ref, 'refs/tags/prerelease-') 
+        id: branch_prerelease
+        run: |
+          if [ "${{ env.BRANCH_NAME }}" == " develop" ]; then
+            echo "STATUS=success" >> $GITHUB_ENV
+          else  
+            echo "STATUS=failure" >> $GITHUB_ENV
+          fi 
+          
       - name: Check for conditioning tag
         if: startsWith(github.ref, 'refs/tags/staging-')
         id: conditioning_tag
@@ -119,7 +128,13 @@ jobs:
         run: |
           echo "One or more conditions are not met, cancelling workflow."
           exit 1
-            
+
+      - name: Check versions
+        if: (env.STATUS == 'failure') && startsWith(github.ref, 'refs/tags/prerelease-')
+        run: |
+          echo "One or more conditions are not met, cancelling workflow."
+          exit 1
+          
   check_runtime:
     needs: check_if_commit_is_valid
     if: |
