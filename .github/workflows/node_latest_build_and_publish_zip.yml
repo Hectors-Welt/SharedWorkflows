@@ -144,6 +144,26 @@ jobs:
         SERVICE_VERSION=$(jq -r .serviceVersion package.json)
         echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
 
+
+    - name: Check if staging tag exists and get run number
+      if: startsWith(github.ref, 'refs/tags/v')
+      id: check_staging_tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        TAG_VERSION=${{ env.BASE_VERSION }}
+        STAGING_TAG_NAME="staging-$TAG_VERSION"
+        REPO=${{ github.repository }}
+        API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
+        if [[ $API_RESPONSE == *"ref"* ]]; then
+          COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
+          RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$COMMIT_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
+          echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
+          echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
+        else
+          echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
+        fi
+        
     - name: Check if hotfix
       if: startsWith(github.ref, 'refs/tags/v')
       id: hotfix_check
@@ -174,7 +194,9 @@ jobs:
     - name: Zip build results
       if: startsWith(github.ref, 'refs/tags/v') &&  ${{env.HOTFIX_STATUS =='failure'}}
       run: |
-         curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/${{env.NAME}}/${{env.NAME}}-${{env.VERSION}}.zip --output ${{env.NAME}}-${{env.VERSION}}.zip
+         ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
+         echo $ENV_VAR_CLEAN
+         curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/${{env.NAME}}/${{env.NAME}}-${{env.VERSION}}.zip --output ${{env.NAME}}-${{ env.BASE_VERSION }}.$ENV_VAR_CLEAN.zip
 
 
     - name: copy file via ssh password
