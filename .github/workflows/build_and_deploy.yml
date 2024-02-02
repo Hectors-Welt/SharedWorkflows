@@ -81,23 +81,16 @@ jobs:
         id: commit
         run: |
           if [ "${{ env.CURRENT_COMMIT }}" == "${{ env.STAGING_COMMIT }}" ]; then
-            commitStatus=success
+               echo "TAG_STATUS=success" >> $GITHUB_ENV
           else  
-            commitStatus=failure
-          fi
-          
-          if $commitStatus==failure; then
-            echo "One or more conditions are not met, cancelling workflow."
-            exit 1
-          else  
-            echo commit is valid
+            echo "TAG_STATUS=failure" >> $GITHUB_ENV
           fi
   
       - name: Check for branch
-        if: startsWith(github.ref, 'refs/tags/staging-') 
+        if: ${{ !startsWith(github.ref, 'refs/tags/prerelease-') }}
         id: branch
         run: |
-          if [ "${{ env.BRANCH_NAME }}" == "main" ]; then
+          if [ "${{ env.BRANCH_NAME }}" == " main" ]; then
             echo "STATUS=success" >> $GITHUB_ENV
           else  
             echo "STATUS=failure" >> $GITHUB_ENV
@@ -131,6 +124,12 @@ jobs:
 
       - name: Check versions
         if: (env.STATUS == 'failure') && startsWith(github.ref, 'refs/tags/prerelease-')
+        run: |
+          echo "One or more conditions are not met, cancelling workflow."
+          exit 1
+
+      - name: Check versions
+        if: (env.TAG_STATUS == 'failure' || env.STATUS == 'failure') && startsWith(github.ref, 'refs/tags/v')
         run: |
           echo "One or more conditions are not met, cancelling workflow."
           exit 1
