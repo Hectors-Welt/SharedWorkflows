@@ -61,13 +61,9 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/staging-')
         id: branch_name
         run: |
-          raw=$(git branch -r --contains ${{ github.ref }})
-          for branch in $raw; do
-            if [[ $branch == "origin/main" ]]; then
-              echo BRANCH_NAME=main >> $GITHUB_ENV
-              break
-            fi
-          done
+          commit=$(git rev-list -n 1 ${{ github.ref }})
+          branch=$(git branch -r --contains $commit | grep -v 'HEAD' | sed 's/origin\///' | head -n 1)
+          echo BRANCH_NAME=$branch >> $GITHUB_ENV
           echo LATEST_PRERELEASE_VERSION=$(git describe --match "prerelease-*" --abbrev=0 --tags $(git rev-list --tags --max-count=1)| cut -d '-' -f 2)>> $GITHUB_ENV
           echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
   
