@@ -72,19 +72,12 @@ jobs:
       - name: Check for branch
         if: startsWith(github.ref, 'refs/tags/v') 
         id: branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ git branch --contains ${{env.STAGING_COMMIT}} | grep x ]; then
             echo "STATUS=success" >> $GITHUB_ENV
           else  
             echo "STATUS=failure" >> $GITHUB_ENV
           fi
-          COMMIT_SHA="${{ github.sha }}"
-          REPO="${{ github.repository }}"
-          BRANCH_NAME=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/commits/$COMMIT_SHA | jq -r '.commit.message')
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-          echo $BRANCH_NAME
 
       - name: Check previous commit for prerelease tag
         if: startsWith(github.ref, 'refs/tags/staging-') 
