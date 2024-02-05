@@ -44,10 +44,8 @@ jobs:
   check_if_commit_is_valid:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  
-
+      - name: Checkout sources
+        uses: actions/checkout@v3
 
       - name: set version env variable
         run: echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
@@ -68,6 +66,10 @@ jobs:
           else  
             echo "STAGING_TAG_STATUS=failure" >> $GITHUB_ENV
           fi
+          COMMIT_SHA="${{ github.sha }}"
+          REPO="${{ github.repository }}"
+          BRANCH_NAME=$(curl -H "Authorization: token ${{github.token}}" https://api.github.com/repos/$REPO/commits/$COMMIT_SHA | jq -r '.commit.message')
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
           
       - name: Check for branch
         if: startsWith(github.ref, 'refs/tags/v') 
