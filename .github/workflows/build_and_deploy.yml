@@ -93,8 +93,8 @@ jobs:
           # Get the list of tags for the previous commit
           TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags | jq -r '.[] | select(.object.sha == "'$PREVIOUS_SHA'") | .ref')
           # Check if any of the tags start with "prerelease-"
+          echo $TAGS
           for TAG in $TAGS; do
-            echo $TAG
             if [[ $TAG == refs/tags/prerelease-* ]]; then
               echo "Der vorletzte Commit wurde mit einem 'prerelease-' Tag versehen."
               echo "TAG=$TAG" >> $GITHUB_ENV
