@@ -90,7 +90,7 @@ jobs:
           CURRENT_SHA="${{ github.sha }}"
           echo "CURRENT_SHA: $CURRENT_SHA"
           # Get the SHA of the previous commit
-          PREVIOUS_SHA=$(git rev-parse "$CURRENT_SHA^")
+          PREVIOUS_SHA=$(git rev-parse "$CURRENT_SHA^2")
           echo "PREVIOUS_SHA: $PREVIOUS_SHA"
           # Get the list of tags for the previous commit
           TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags | jq -r '.[] | select(.object.sha == "'$PREVIOUS_SHA'") | .ref')
