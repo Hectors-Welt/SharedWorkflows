@@ -68,17 +68,17 @@ jobs:
           else  
             echo "STAGING_TAG_STATUS=failure" >> $GITHUB_ENV
           fi
-          
+
       - name: Check for branch
         if: startsWith(github.ref, 'refs/tags/v') 
         id: branch
         run: |
-          if  git branch --contains ${{env.STAGING_COMMIT}} | grep x ; then
+          if git rev-parse --verify --quiet ${{env.STAGING_COMMIT}}; then
             echo "STATUS=success" >> $GITHUB_ENV
           else  
             echo "STATUS=failure" >> $GITHUB_ENV
           fi
-
+          
       - name: Check previous commit for prerelease tag
         if: startsWith(github.ref, 'refs/tags/staging-') 
         id: check_tag
