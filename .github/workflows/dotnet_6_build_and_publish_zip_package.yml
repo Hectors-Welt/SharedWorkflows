@@ -89,8 +89,8 @@ jobs:
 
       - name: test
         run: | 
-          REPO="<Ihr Repository>"
-          BRANCH="<Ihr Branch>"
+          REPO=${{ github.repository }}
+          BRANCH="main"
           PREFIX="staging-"
           GITHUB_TOKEN="<Ihr GitHub Token>"
           
