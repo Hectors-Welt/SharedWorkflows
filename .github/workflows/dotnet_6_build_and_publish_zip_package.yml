@@ -67,6 +67,7 @@ jobs:
 
       - name : test
         run: |
+          TAG_VERSION=${{ env.BASE_VERSION }}
           REPO=${{ github.repository }}
           STAGING_TAG_NAME="staging-$TAG_VERSION"
           API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
