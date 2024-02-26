@@ -86,6 +86,32 @@ jobs:
           else
             echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
           fi
+
+      - name: test
+        run: | 
+          REPO="<Ihr Repository>"
+          BRANCH="<Ihr Branch>"
+          PREFIX="staging-"
+          GITHUB_TOKEN="<Ihr GitHub Token>"
+          
+          # Get the list of tags for the branch
+          TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags | jq -r '.[] | select(.ref | startswith("refs/tags/'$PREFIX'")) | .ref')
+          
+          # Loop through the tags
+          for TAG in $TAGS; do
+            # Remove the "refs/tags/" prefix
+            TAG=${TAG#refs/tags/}
+            # Check if the tag is for the branch
+            COMMIT=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags/$TAG | jq -r '.object.sha')
+            BRANCH_COMMIT=$(git rev-parse refs/heads/$BRANCH)
+            if [ "$COMMIT" = "$BRANCH_COMMIT" ]; then
+              # Remove the "staging-" prefix and output the version
+              VERSION=${TAG#$PREFIX}
+              echo $VERSION
+              break
+            fi
+          done
+
           
       - name: Check if hotfix
         if: startsWith(github.ref, 'refs/tags/v')
