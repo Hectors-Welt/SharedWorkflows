@@ -30,9 +30,6 @@ env:
 jobs:
    build_and_publish_zip:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./src
     
     steps:
       - name: Checkout sources
@@ -135,20 +132,24 @@ jobs:
           fi  
           
       - name: add feeds
+        working-directory: ./src
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
           dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
           dotnet restore
       
       - name: Build
+        working-directory: ./src
         if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}  
         run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
      
       - name: Zip build results
+        working-directory: ./src
         if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}  
         run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .
 
       - name: Zip build results
+        working-directory: ./src
         if:  ${{ startsWith(github.ref, 'refs/tags/v') &&  env.HOTFIX_STATUS =='failure'}}
         run: |
            ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
