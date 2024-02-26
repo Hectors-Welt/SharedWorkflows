@@ -66,6 +66,8 @@ jobs:
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
 
       - name : test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_VERSION=${{ env.BASE_VERSION }}
           REPO=${{ github.repository }}
