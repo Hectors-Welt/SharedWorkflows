@@ -204,7 +204,7 @@ jobs:
           firstchar=`echo ${{env.NAME}} | cut -c1-1`
           echo $firstchar
           ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
-          echo ENV_VAR_CLEAN=$ENV_VAR_CLEAN >> $GITHUB_ENV
+          echo ENV_VAR_CLEAN=$(echo $ENV_VAR_CLEAN) >> $GITHUB_ENV
           curl ${{ secrets.nexusAptRepoStagingHost }}pool/$firstchar/${{env.NAME}}/${{env.NAME}}_${{env.BASE_VERSION}}.${{env.ENV_VAR_CLEAN}}.deb --output ${{env.NAME}}_${{env.BASE_VERSION}}.${{env.ENV_VAR_CLEAN}}.deb 
           
       - name: push deb package to nexus apt repo
