@@ -93,9 +93,10 @@ jobs:
           BRANCH="main"
           PREFIX="staging-"
           GITHUB_TOKEN="<Ihr GitHub Token>"
-          
+
+          TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
+          echo $TAGS
           # Get the list of tags for the branch
-          TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags | jq -r '.[] | select(.ref | startswith("refs/tags/'$PREFIX'")) | .ref')
           
           # Loop through the tags
           for TAG in $TAGS; do
