@@ -80,9 +80,10 @@ jobs:
           STAGING_TAG_NAME="staging-$TAG_VERSION"
           REPO=${{ github.repository }}
           API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
+          echo $API_RESPONSE
           if [[ $API_RESPONSE == *"ref"* ]]; then
             COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
-            RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$COMMIT_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
+            RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_branch == "'$STAGING_TAG_NAME'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
             echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
             echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
           else
