@@ -75,6 +75,7 @@ jobs:
           STAGING_TAG_NAME="staging-$TAG_VERSION"
           REPO=${{ github.repository }}
           API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
+          echo $API_RESPONSE
           if [[ $API_RESPONSE == *"ref"* ]]; then
             COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
             RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$COMMIT_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
@@ -83,32 +84,6 @@ jobs:
           else
             echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
           fi
-
-      - name: test
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: | 
-          REPO=${{ github.repository }}
-          BRANCH="main"
-          PREFIX="staging-"
-
-          TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags | jq -r '.[] | select(.ref | startswith("refs/tags/'$PREFIX'")) | .ref')
-
-          # Loop through the tags
-          for TAG in $TAGS; do
-          # Remove the "refs/tags/" prefix
-          TAG=${TAG#refs/tags/}
-          # Check if the tag is for the branch
-          COMMIT=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags/$TAG | jq -r '.object.sha')
-          BRANCH_COMMIT=$(git rev-parse refs/heads/$BRANCH)
-          if [ "$COMMIT" = "$BRANCH_COMMIT" ]; then
-            # Remove the "staging-" prefix and output the version
-            VERSION=${TAG#$PREFIX}
-            echo $VERSION
-            break
-          fi
-          done
-
           
       - name: Check if hotfix
         if: startsWith(github.ref, 'refs/tags/v')
