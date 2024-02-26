@@ -70,26 +70,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_VERSION=${{ env.BASE_VERSION }}
-          REPO=${{ github.repository }}
           STAGING_TAG_NAME="staging-$TAG_VERSION"
+          REPO=${{ github.repository }}
           API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
-
-          SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
+          echo $API_RESPONSE
+          if [[ $API_RESPONSE == *"ref"* ]]; then
+            COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
+            echo $COMMIT_SHA
+            RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_branch == "'$STAGING_TAG_NAME'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
+            echo $RUN_NUMBER
+            echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
+            echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
+          else
+            echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
+          fi
           
-          # Get the list of tags
-          TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
-          
-          # Loop through the tags
-          TAG=$(echo $TAGS | jq -r '.[] | select(.object.sha == "'$SHA'") | .ref')
-          
-          # Get the list of workflow runs
-          RUNS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs)
-          
-          # Loop through the runs
-          RUN_NUMBER=$(echo $RUNS | jq -r '.workflow_runs[] | select(.head_sha == "'$SHA'") | .run_number')
-          
-          echo "Tag: $TAG"
-          echo "Run number: $RUN_NUMBER"
       - name: Check if staging tag exists and get run number
         if: startsWith(github.ref, 'refs/tags/v')
         id: check_staging_tag
