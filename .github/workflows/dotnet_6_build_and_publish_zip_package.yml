@@ -88,11 +88,12 @@ jobs:
           fi
 
       - name: test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: | 
           REPO=${{ github.repository }}
           BRANCH="main"
           PREFIX="staging-"
-          GITHUB_TOKEN="<Ihr GitHub Token>"
 
           TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
           echo $TAGS
