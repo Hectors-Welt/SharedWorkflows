@@ -197,15 +197,20 @@ jobs:
           arch: "amd64"
           desc: Hector ${{ env.NAME }}
 
+      - name: Set run number as env variable
+        working-directory: ./src
+        if:  ${{ startsWith(github.ref, 'refs/tags/v') &&  env.HOTFIX_STATUS =='failure'}}
+        run: |
+           ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
+           echo ENV_VAR_CLEAN=$(echo $ENV_VAR_CLEAN) >> $GITHUB_ENV
+           FIRST_CHAR=`echo ${{env.NAME}} | cut -c1-1`
+           echo FIRST_CHAR=$(echo $FIRST_CHAR) >> $GITHUB_ENV
+           
       - name: get package binarys from repo
         if:  ${{ startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='failure'}}
         id: debian_package
         run: |
-          firstchar=`echo ${{env.NAME}} | cut -c1-1`
-          echo $firstchar
-          ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
-          echo ENV_VAR_CLEAN=$(echo $ENV_VAR_CLEAN) >> $GITHUB_ENV
-          curl ${{ secrets.nexusAptRepoStagingHost }}pool/$firstchar/${{env.NAME}}/${{env.NAME}}_${{env.BASE_VERSION}}.${{env.ENV_VAR_CLEAN}}.deb --output ${{env.NAME}}_${{env.BASE_VERSION}}.${{env.ENV_VAR_CLEAN}}.deb 
+          curl ${{ secrets.nexusAptRepoStagingHost }}pool/${{env.FIRST_CHAR}}/${{env.NAME}}/${{env.NAME}}_${{env.BASE_VERSION}}.${{env.ENV_VAR_CLEAN}}.deb --output ${{env.NAME}}_${{env.BASE_VERSION}}.${{env.ENV_VAR_CLEAN}}.deb 
           
       - name: push deb package to nexus apt repo
         if: ${{ startsWith(github.ref, 'refs/tags/v') &&  env.HOTFIX_STATUS =='failure'}}
