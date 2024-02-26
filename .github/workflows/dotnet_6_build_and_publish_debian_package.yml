@@ -215,7 +215,7 @@ jobs:
       - name: push deb package to nexus apt repo
         if: ${{ startsWith(github.ref, 'refs/tags/v') &&  env.HOTFIX_STATUS =='failure'}}
         run: |
-          curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@./${{env.NAME}}_${{env.BASE_VERSION}}.$ENV_VAR_CLEAN_amd64.deb" "${{ secrets.nexusAptRepoHost  }}"
+          curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@./${{env.NAME}}_${{env.BASE_VERSION}}.${{env.ENV_VAR_CLEAN}}.deb" "${{ secrets.nexusAptRepoHost  }}"
       
       - name: push deb package to nexus apt repo
         if: ${{ startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success'}}
