@@ -65,14 +65,17 @@ jobs:
         run: |
           # Get the latest version with the prefix "v"
           LATEST_VERSION=$(git tag | grep "^v" | sort -V | tail -n 1 | cut -d 'v' -f 2)
-      
+          echo $LATEST_VERSION
           # Get the current version (remove the "v" prefix)
           CURRENT_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/})
-      
+          echo $CURRENT_VERSION
           # Get the patch versions
           LATEST_PATCH_VERSION=$(echo $LATEST_VERSION | cut -d '.' -f 3)
+          echo $LATEST_PATCH_VERSION
+
           CURRENT_PATCH_VERSION=$(echo $CURRENT_VERSION | cut -d '.' -f 3)
-      
+          echo $CURRENT_PATCH_VERSION
+
           # Check if the current patch version is one higher than the latest patch version
           if [[ $((CURRENT_PATCH_VERSION)) == $((LATEST_PATCH_VERSION + 1)) ]]; then
             echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
