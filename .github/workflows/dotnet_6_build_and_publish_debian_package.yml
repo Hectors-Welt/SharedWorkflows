@@ -230,7 +230,7 @@ jobs:
       - name: push deb package to nexus apt repo
         if: ${{ startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success'}}
         run: |
-          curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoHost  }}"
+          curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.hotfix.outputs.file_name}}" "${{ secrets.nexusAptRepoHost  }}"
 
       - name: push deb package to nexus apt repo
         if: startsWith(github.ref, 'refs/tags/staging-')
