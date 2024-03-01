@@ -89,23 +89,33 @@ jobs:
       - name: Check if hotfix
         if: startsWith(github.ref, 'refs/tags/v')
         id: hotfix_check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get the latest version with the prefix "v"
-          LATEST_VERSION=$(git tag | grep "^v" | sort -V | tail -n 1 | cut -d 'v' -f 2)
-      
-          # Get the current version (remove the "v" prefix)
-          CURRENT_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/})
-      
-          # Get the patch versions
-          LATEST_PATCH_VERSION=$(echo $LATEST_VERSION | cut -d '.' -f 3)
-          CURRENT_PATCH_VERSION=$(echo $CURRENT_VERSION | cut -d '.' -f 3)
-      
-          # Check if the current patch version is one higher than the latest patch version
-          if [[ $((CURRENT_PATCH_VERSION)) == $((LATEST_PATCH_VERSION + 1)) ]]; then
-            echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+        
+          REPO="${{ github.repository }}"
+          GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+  
+          IFS='.' read -ra VERSION <<< "$CURRENT_TAG"
+          MAJOR=${VERSION[0]#v}
+          MINOR=${VERSION[1]}
+          PATCH=${VERSION[2]}
+  
+          if [ "$PATCH" -gt 0 ]; then
+            PATCH=$((PATCH-1))
+            HOTFIX_TAG="v$MAJOR.$MINOR.$PATCH"
+  
+            TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
+  
+            if echo $TAGS | jq -e --arg tag "refs/tags/$HOTFIX_TAG" '.[] | select(.ref == $tag)' > /dev/null; then
+              echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+            else
+              echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
+            fi
           else
             echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
-          fi  
+          fi 
           
       - name: add feeds
         working-directory: ./src
