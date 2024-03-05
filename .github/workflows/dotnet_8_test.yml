@@ -1,4 +1,4 @@
-name: Create v8 publish zip
+name: Run dotnet v8 test
 
 on:
   workflow_call:
@@ -16,30 +16,34 @@ on:
       hangfireUsername:
         required: true
       hangfirePassword:
-        required: true  
+        required: true
       nugetGithubHost:
         required: true
       nugetGithubUsername:
         required: true
       nugetGithubPassword:
         required: true
- 
+      
+      
 env:
-  SERVICE: ${{ github.event.repository.name }}
+  REGISTRY: ${{ secrets.dockerRepo }}
+  SERVICE: ${{ github.event.repository.name }} 
         
-jobs:
-   build_and_publish_zip:
+jobs:  
+  dotnet_8_test:
+    
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./src
     
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
+
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
 
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 8.0.201
 
@@ -60,38 +64,23 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
           
-      - name: add feeds
+      - name: add private feed
+        working-directory: ./src
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
           dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
           dotnet restore
-      
-      - name: Build
-        run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
-     
-      - name: Zip build results
-        run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .
+          
+      - name: Build and test
+        run: dotnet test ${{ env.SERVICE }}.sln --filter TestCategory=Unit --logger "trx;LogFileName=test-results.trx" || true
 
-      - name: copy file via ssh password
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: appleboy/scp-action@master
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
         with:
-          host: ${{ secrets.packageRepoHost }}
-          username: ${{ secrets.packageRepoUsername }}
-          password: ${{ secrets.packageRepoPassword }}
-          port: ${{ secrets.packageRepoPort }}
-          source: ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip
-          target: release/${{ env.NAME }}
-          strip_components: 3
-  
-      - name: copy file via ssh password
-        if: startsWith(github.ref, 'refs/tags/prerelease-')
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.packageRepoHost }}
-          username: ${{ secrets.packageRepoUsername }}
-          password: ${{ secrets.PackageRepoPassword }}
-          port: ${{ secrets.packageRepoPort}}
-          source: ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip
-          target: prerelease/${{ env.NAME }}
-          strip_components: 3
+          name: DotNET Tests
+          path: "**/test-results.trx"                            
+          reporter: dotnet-trx
+          fail-on-error: false
+
+      
