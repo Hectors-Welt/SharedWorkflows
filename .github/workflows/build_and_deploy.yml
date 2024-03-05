@@ -1,0 +1,246 @@
+name: Build and deploy
+
+on:
+  workflow_call:
+    secrets:
+      hangfireFeedUrl:
+        required: true  
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
+      nexusAptRepoHost:
+        required: true 
+      nexusAptRepoPrereleaseHost:
+        required: true  
+      nexusAptRepoStagingHost: 
+        required: true  
+      nexusDockerUsername: 
+        required: true
+      nexusDockerPassword:
+        required: true
+      nugetGithubHost:
+        required: true
+      nugetGithubUsername:
+        required: true
+      nugetGithubPassword:
+        required: true
+      packageRepoHost: 
+        required: true
+      packageRepoPassword:
+        required: true
+      packageRepoUsername:
+        required: true
+      packageRepoPort:
+        required: true
+      dockerRepo:
+        required: true                
+
+jobs:
+  check_if_commit_is_valid:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: set version env variable
+        run: echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
+
+      - name: Prepare env variables
+        run: |
+          echo LATEST_PRERELEASE_VERSION=$(git describe --match "prerelease-*" --abbrev=0 --tags $(git rev-list --tags --max-count=1)| cut -d '-' -f 2)>> $GITHUB_ENV
+          echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
+          echo CURRENT_COMMIT=$(git rev-parse HEAD) >> $GITHUB_ENV
+          echo STAGING_COMMIT=$(git rev-list -n 1 staging-${{ env.VERSION }}) >> $GITHUB_ENV
+
+      - name: Check if hotfix
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: hotfix_check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+        
+          REPO="${{ github.repository }}"
+          GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+  
+          IFS='.' read -ra VERSION <<< "$CURRENT_TAG"
+          MAJOR=${VERSION[0]#v}
+          MINOR=${VERSION[1]}
+          PATCH=${VERSION[2]}
+  
+          if [ "$PATCH" -gt 0 ]; then
+            PATCH=$((PATCH-1))
+            HOTFIX_TAG="v$MAJOR.$MINOR.$PATCH"
+  
+            TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
+  
+            if echo $TAGS | jq -e --arg tag "refs/tags/$HOTFIX_TAG" '.[] | select(.ref == $tag)' > /dev/null; then
+              echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+            else
+              echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
+            fi
+          else
+            echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
+          fi
+         
+          
+      - name: Check for staging tag
+        if: ${{startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='failure'}}
+        id: staging_tag
+        run: |
+          if git rev-parse "staging-${{ env.VERSION }}" >/dev/null 2>&1; then
+            echo "STAGING_TAG_STATUS=success" >> $GITHUB_ENV
+          else  
+            echo "STAGING_TAG_STATUS=failure" >> $GITHUB_ENV
+          fi
+
+      - name: Check for branch
+        if: ${{startsWith(github.ref, 'refs/tags/v')  && env.HOTFIX_STATUS =='failure'}}
+        id: branch
+        run: |
+          if git rev-parse --verify --quiet ${{env.STAGING_COMMIT}}; then
+            echo "STATUS=success" >> $GITHUB_ENV
+          else  
+            echo "STATUS=failure" >> $GITHUB_ENV
+          fi
+          
+      - name: Check previous commit for prerelease tag
+        if: startsWith(github.ref, 'refs/tags/staging-') 
+        id: check_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          # Get the SHA of the current commit
+          CURRENT_SHA="${{ github.sha }}"
+          echo "CURRENT_SHA: $CURRENT_SHA"
+          # Get the SHA of the previous commit
+          PREVIOUS_SHA=$(git rev-parse "$CURRENT_SHA^2")
+          echo "PREVIOUS_SHA: $PREVIOUS_SHA"
+          # Get the list of tags for the previous commit
+          TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags | jq -r '.[] | select(.object.sha == "'$PREVIOUS_SHA'") | .ref')
+          echo "TAGS: $TAGS"
+          # Check if any of the tags start with "prerelease-"
+          for TAG in $TAGS; do
+            if [[ $TAG == refs/tags/prerelease-* ]]; then
+              echo "Der vorletzte Commit wurde mit einem 'prerelease-' Tag versehen."
+              echo "TAG=$TAG" >> $GITHUB_ENV
+              break
+            fi
+          done
+  
+      - name: Check for commit
+        if: ${{startsWith(github.ref, 'refs/tags/v')  && env.HOTFIX_STATUS =='failure'}}
+        id: commit
+        run: |
+          if [ "${{ env.CURRENT_COMMIT }}" == "${{ env.STAGING_COMMIT }}" ]; then
+               echo "TAG_STATUS=success" >> $GITHUB_ENV
+          else  
+            echo "TAG_STATUS=failure" >> $GITHUB_ENV
+          fi
+
+      - name: Check for conditioning tag
+        if: startsWith(github.ref, 'refs/tags/staging-')
+        id: conditioning_tag
+        run: |
+          if [ "${{ env.LATEST_PRERELEASE_VERSION }}" == "${{ env.STAGING_VERSION }}" ]; then
+            echo "TAG_STATUS=success" >> $GITHUB_ENV
+          else  
+            echo "TAG_STATUS=failure" >> $GITHUB_ENV
+          fi
+  
+      - name: Check versions
+        if: (env.TAG_STATUS == 'failure' || env.TAG == '') && startsWith(github.ref, 'refs/tags/staging-')
+        run: |
+          echo "One or more conditions are not met, cancelling workflow."
+          exit 1
+
+      - name: Check versions
+        if: ${{(env.TAG_STATUS == 'failure' || env.STATUS == 'failure') && startsWith(github.ref, 'refs/tags/v')  && env.HOTFIX_STATUS =='failure'}}
+        run: |
+          if [ env.STATUS == 'failure' ]; then
+            echo "There was no commit found with the same version and staging tag on this branch."
+          else  
+            echo "There was a commit found with the same version "
+          fi
+          exit 1
+          
+  check_runtime:
+    needs: check_if_commit_is_valid
+    if: |
+      always() &&
+      (needs.check_if_commit_is_valid.result == 'success' || needs.check_if_commit_is_valid.result == 'skipped') 
+    runs-on: ubuntu-latest
+    outputs:
+        runtime: ${{ steps.check_file.outputs.result }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: Check if file was created
+        id: check_file
+        run: | 
+          if [ -f package.json ]; then
+            echo "::set-output name=result::node"
+            echo node
+          else
+            echo "::set-output name=result::dotnet"
+            echo dotnet
+          fi        
+          
+  dotnet:
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_dotnet.yml@main
+    needs: [check_runtime]
+    if: needs.check_runtime.outputs.runtime == 'dotnet'
+    secrets:
+      nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
+      nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
+      nexusAptRepoPrereleaseHost: ${{ secrets.nexusAptRepoPrereleaseHost }}
+      nexusAptRepoStagingHost: ${{ secrets.nexusAptRepoStagingHost }}
+      nexusAptRepoHost: ${{ secrets.nexusAptRepoHost}}
+      hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
+      hangfireUsername: ${{ secrets.hangfireUsername }}
+      hangfirePassword: ${{ secrets.hangfirePassword }}
+      nugetGithubHost: ${{ secrets.nugetGithubHost }}
+      nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
+      nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
+      packageRepoHost: ${{ secrets.packageRepoHost }}
+      packageRepoPassword: ${{ secrets.packageRepoPassword }}
+      packageRepoUsername: ${{ secrets.packageRepoUsername }}
+      packageRepoPort: ${{ secrets.packageRepoPort }}
+      dockerRepo: ${{ secrets.dockerRepo }}
+      nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
+      nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
+
+  node:
+    needs: check_runtime
+    if: needs.check_runtime.outputs.runtime == 'node'
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
+    secrets:
+      nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
+      nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
+      nexusAptRepoPrereleaseHost: ${{ secrets.nexusAptRepoPrereleaseHost }}
+      nexusAptRepoStagingHost: ${{ secrets.nexusAptRepoStagingHost }}
+      nexusAptRepoHost: ${{ secrets.nexusAptRepoHost}}
+      hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
+      hangfireUsername: ${{ secrets.hangfireUsername }}
+      hangfirePassword: ${{ secrets.hangfirePassword }}
+      nugetGithubHost: ${{ secrets.nugetGithubHost }}
+      nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
+      nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
+      packageRepoHost: ${{ secrets.packageRepoHost }}
+      packageRepoPassword: ${{ secrets.packageRepoPassword }}
+      packageRepoUsername: ${{ secrets.packageRepoUsername }}
+      packageRepoPort: ${{ secrets.packageRepoPort }}
+      dockerRepo: ${{ secrets.dockerRepo }}
+      nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
+      nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
+        
+

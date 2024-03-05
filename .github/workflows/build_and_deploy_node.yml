@@ -1,0 +1,66 @@
+name: build and deploy node
+
+on:
+  workflow_call:
+    secrets:
+      hangfireFeedUrl:
+        required: true  
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
+      nexusAptRepoHost:
+        required: true 
+      nexusAptRepoPrereleaseHost:
+        required: true  
+      nexusAptRepoStagingHost: 
+        required: true
+      nexusDockerUsername:
+        required: true  
+      nexusDockerPassword:
+        required: true 
+      nugetGithubHost:
+        required: true
+      nugetGithubUsername:
+        required: true
+      nugetGithubPassword:
+        required: true
+      packageRepoHost: 
+        required: true
+      packageRepoPassword:
+        required: true
+      packageRepoUsername:
+        required: true
+      packageRepoPort:
+        required: true
+      dockerRepo:
+        required: true 
+jobs:     
+  build_and_publish_docker:
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_docker_image.yml@main
+    secrets:
+      dockerRepo: ${{ secrets.DOCKER_REPO }}
+      nexusDockerUsername: ${{ secrets.NEXUS_DOCKER_USERNAME }}
+      nexusDockerPassword: ${{ secrets.NEXUS_DOCKER_PASSWORD }}
+      packageRegistryToken: ${{ secrets.PACKAGE_REGISTRY_TOKEN }}
+        
+  build_debian_package:
+      uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_18_build_debian_package.yml@main
+      secrets:
+        nexusAptRepoUsername: ${{ secrets.NEXUS_APT_REPO_USERNAME }}
+        nexusAptRepoPassword: ${{ secrets.NEXUS_APT_REPO_PASSWORD }}
+        nexusAptRepoHost: ${{ secrets.NEXUS_APT_REPO_HOST }}
+        nexusAptRepoPrereleaseHost: ${{ secrets.NEXUS_APT_REPO_HOST_PRERELEASE }} 
+        nexusAptRepoStagingHost: ${{ secrets.NEXUS_APT_REPO_HOST_STAGING }}
+        
+  build_deb_and_zip:
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_zip.yml@main
+    secrets:
+      packageRepoHost: ${{ secrets.PACKAGE_REPO_HOST }}
+      packageRepoPassword: ${{ secrets.PACKAGE_REPO_PASSWORD }}
+      packageRepoUsername: ${{ secrets.PACKAGE_REPO_USERNAME }}
+      packageRepoPort: ${{ secrets.PACKAGE_REPO_PORT }}

@@ -1,0 +1,37 @@
+name: Check for branch and tags
+
+on:
+  workflow_call:
+    secrets:
+      branchName:
+        required: true  
+      latestPrerelease:
+        required: true 
+      version:
+        required: true  
+jobs:
+  check_branch_and_tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for branch
+        env:
+          BRANCH_NAME: ${{ secrets.branchName }}
+        if: startsWith(github.ref, 'refs/tags/staging-') && ${{ env.BRANCH_NAME }} == 'develop'
+        id: branch
+        run: |
+          echo "STATUS=success" >> $GITHUB_OUTPUT
+
+      - name: Check for conditioning tag
+        env:
+          LATEST_PRERELEASE: ${{ secrets.latestPrerelease }}
+          STAGING_VERSION:  ${{ secrets.version }}
+        id: conditioning_tag
+        if: steps.branch.outputs.STATUS == 'success'
+        run: |
+          echo LATEST_PRERELEASE_VERSION=${{ env.LATEST_PRERELEASE }} >> $GITHUB_OUTPUT
+          echo STAGING_VERSION=${{ env.STAGING_VERSION }} >> $GITHUB_OUTPUT
+
+      - name: Check versions
+        if: steps.branch.outputs.STATUS == 'success' && steps.conditioning_tag.outputs.LATEST_PRERELEASE_VERSION == steps.conditioning_tag.outputs.STAGING_VERSION
+        run: |
+          echo SUCCESS
