@@ -41,7 +41,7 @@ jobs:
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: 8.x
+          dotnet-version: 8.0.201
 
       - name: Prepare environment variables
         if: startsWith(github.ref, 'refs/tags/v')
