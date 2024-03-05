@@ -29,6 +29,7 @@ env:
 
 jobs:
   build_and_push_docker_image:
+    if: ${{!startsWith(github.ref, 'refs/tags/staging-')}}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -112,6 +113,18 @@ jobs:
           SERVICE=${{ env.SERVICE }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:release
+        labels: ${{ steps.meta.outputs.labels }}
+        file: ./src/Dockerfile
+
+    - name: Build and push Docker image
+      if: startsWith(github.ref, 'refs/tags/staging-')
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        build-args: |
+          SERVICE=${{ env.SERVICE }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}, ${{ secrets.dockerRepo }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:staging
         labels: ${{ steps.meta.outputs.labels }}
         file: ./src/Dockerfile  
 
