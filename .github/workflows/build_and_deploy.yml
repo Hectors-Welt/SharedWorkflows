@@ -220,9 +220,9 @@ jobs:
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
 
   node:
-    needs: check_runtime
-    if: needs.check_runtime.outputs.runtime == 'node'
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
+    needs: [check_runtime]
+    if: needs.check_runtime.outputs.runtime == 'node'
     secrets:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
       nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
