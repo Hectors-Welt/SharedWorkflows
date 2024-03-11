@@ -43,6 +43,9 @@ jobs:
   set_version: 
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
       - name: Get Node.js version
         id: node-version
         run: echo "::set-output name=version::$(jq -r .engines.node package.json)"
