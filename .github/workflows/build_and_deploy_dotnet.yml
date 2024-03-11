@@ -54,6 +54,7 @@ jobs:
           node-version: ${{ steps.node-version.outputs.version }}
     
       - name: Get .NET version
+        working-directory: ./src
         id: dotnet-version
         run: echo "::set-output name=version::$(grep -oP '(?<=<TargetFramework>).*?(?=</TargetFramework>)' *.csproj)"
 
@@ -66,6 +67,7 @@ jobs:
       - name: test
         run: |
           echo ${{ steps.dotnet-version.outputs.version }}
+          
   build_and_publish_docker:
     if: ${{!startsWith(github.ref, 'refs/tags/staging-')}}
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_docker_image.yml@main
