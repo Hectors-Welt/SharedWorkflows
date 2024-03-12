@@ -11,6 +11,8 @@ on:
         required: true
       packageRegistryToken:
         required: true
+      nodeVersion: 
+        required: true
  
 env:
   SERVICE: ${{ github.event.repository.name }}
