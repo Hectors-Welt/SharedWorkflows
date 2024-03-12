@@ -54,7 +54,7 @@ jobs:
           node-version: ${{ steps.node-version.outputs.version }}
     
       - name: Get .NET version
-        working-directory: ./src
+        working-directory: src
         id: dotnet-version
         run: echo "::set-output name=version::$(grep -oP '(?<=<TargetFramework>).*?(?=</TargetFramework>)' *.csproj)"
 
