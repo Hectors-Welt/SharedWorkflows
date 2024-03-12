@@ -50,7 +50,7 @@ jobs:
         
       - name: Get Node.js version
         id: node-version
-        run: echo "::set-output name=version::$(jq -r '.devDependencies["@types/node"]'  package.json)"
+        run: echo "::set-output name=version::$(jq -r '.devDependencies["@types/node"]'  package.json | cut -d '.' -f 1 | tr -d '[:space:]')"
   
   build_and_publish_docker:
     needs: [get_version]
