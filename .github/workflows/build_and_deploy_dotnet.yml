@@ -54,6 +54,7 @@ jobs:
       id: dotnet-version
       run: |
          echo "::set-output name=version::$(sed -n 's|<TargetFramework>\(.*\)</TargetFramework>|\1|p' *.csproj | sed 's/net//' | cut -d '.' -f 1 | tr -d '[:space:]')"
+         echo $(sed -n 's|<TargetFramework>\(.*\)</TargetFramework>|\1|p' *.csproj | sed 's/net//' | cut -d '.' -f 1 | tr -d '[:space:]')---
 
   build_and_publish_docker:
     if: ${{!startsWith(github.ref, 'refs/tags/staging-')}}
