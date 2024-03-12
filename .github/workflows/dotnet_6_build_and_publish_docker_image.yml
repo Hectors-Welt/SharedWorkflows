@@ -73,10 +73,10 @@ jobs:
       working-directory: ./src
       run: | 
         cat <<EOF >Dockerfile
-        FROM mcr.microsoft.com/dotnet/aspnet:${{ steps.runtime-version.outputs.version }}" AS base
+        FROM mcr.microsoft.com/dotnet/aspnet:${{ steps.runtime-version.outputs.version }}.0" AS base
         WORKDIR /app
         EXPOSE 80
-        FROM mcr.microsoft.com/dotnet/sdk:${{ secrets.dotnetVersion }} AS build
+        FROM mcr.microsoft.com/dotnet/sdk:${{ steps.runtime-version.outputs.version }}.0 AS build
         COPY ./ .
         RUN ls -al
         WORKDIR "/src/."
