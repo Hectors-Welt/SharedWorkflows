@@ -47,7 +47,7 @@ jobs:
     - name: Get .NET Runtime Version
       working-directory: src
       run: |
-        version=$(grep -oPm1 "(?<=<TargetFramework>)[^<]+" *.csproj
+        version=$(grep -oPm1 "(?<=<TargetFramework>)[^<]+" TestService.csproj
         echo "version=$version" >> $GITHUB_ENV
       id: dotnet
 
