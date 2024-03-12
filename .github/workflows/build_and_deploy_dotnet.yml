@@ -44,12 +44,11 @@ jobs:
   set_version: 
     runs-on: ubuntu-latest
     steps:
-    - name: Get .NET Runtime Version
+
+    - name: Get .NET version
       working-directory: src
       run: |
-        version=$(grep -oPm1 "(?<=<TargetFramework>)[^<]+" TestService.csproj
-        echo "version=$version" >> $GITHUB_ENV
-      id: dotnet
+        echo "Framework version: $(grep -oP '(?<=<TargetFramework>).*?(?=</TargetFramework>)' *.csproj)"
 
     - name: Show .NET Runtime Version
       run: echo "The .NET Runtime Version is ${{ env.version }}"
