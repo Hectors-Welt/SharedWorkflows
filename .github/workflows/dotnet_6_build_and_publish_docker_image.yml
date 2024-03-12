@@ -67,7 +67,9 @@ jobs:
 
     - name: get runtime version
       id: runtime-version
-      run:  echo "::set-output name=version::$(${{secrets.dotnetVersion}} | cut -d '.' -f 1)"
+      run: |
+        version=${{secrets.dotnetVersion}}
+        echo "::set-output name=version::$( $version | cut -d '.' -f 1)"
     
     - name: create docker file
       working-directory: ./src
