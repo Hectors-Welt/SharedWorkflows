@@ -51,7 +51,7 @@ jobs:
       working-directory: src
       id: dotnet-version
       run: |
-        echo "::set-output name=version::$(sed -n 's|<TargetFramework>\(.*\)</TargetFramework>|\1|p' *.csproj | sed 's/net//' | tr -d '[:space:]')"
+        echo "::set-output name=version::$(sed -n 's|<TargetFramework>\(.*\)</TargetFramework>|\1|p' *.csproj | sed 's/net//' | tr -d '[:space:]' | cut -d '.' -f 1).x)"
         
     - name: Show .NET Runtime Version
       run: echo "The .NET version is ${{ steps.dotnet-version.outputs.version }}"
@@ -59,7 +59,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: ${{ steps.dotnet-version.outputs.version }}.x"
+        dotnet-version: ${{ steps.dotnet-version.outputs.version }}"
           
   build_and_publish_docker:
     if: ${{!startsWith(github.ref, 'refs/tags/staging-')}}
