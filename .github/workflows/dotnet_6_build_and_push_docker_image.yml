@@ -21,7 +21,8 @@ on:
         required: true
       nexusDockerPassword:
         required: true
-
+      dockerVersion: 
+        required: true
  
 env:
   SERVICE: ${{ github.event.repository.name }}
