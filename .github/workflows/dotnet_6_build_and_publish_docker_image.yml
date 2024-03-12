@@ -64,12 +64,16 @@ jobs:
         echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
         echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
-        
+
+    - name: get runtime version
+      id: runtime-version
+      run:  echo "::set-output name=version::$(${{secrets.dotnetVersion}} | cut -d '.' -f 1)"
+    
     - name: create docker file
       working-directory: ./src
       run: | 
         cat <<EOF >Dockerfile
-        FROM mcr.microsoft.com/dotnet/aspnet:${{ secrets.dotnetVersion }} AS base
+        FROM mcr.microsoft.com/dotnet/aspnet:${{ steps.runtime-version.outputs.version }}" AS base
         WORKDIR /app
         EXPOSE 80
         FROM mcr.microsoft.com/dotnet/sdk:${{ secrets.dotnetVersion }} AS build
