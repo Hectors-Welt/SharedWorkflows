@@ -41,8 +41,10 @@ on:
         required: true 
       
 jobs:
-  set_version: 
+  get_version: 
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.dotnet-version.outputs.version }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -52,14 +54,6 @@ jobs:
       id: dotnet-version
       run: |
         echo "::set-output name=version::$(sed -n 's|<TargetFramework>\(.*\)</TargetFramework>|\1|p' *.csproj | sed 's/net//' | tr -d '[:space:]' | cut -d '.' -f 1).x"
-        
-    - name: Show .NET Runtime Version
-      run: echo "The .NET version is ${{ steps.dotnet-version.outputs.version }}"
-          
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: ${{ steps.dotnet-version.outputs.version }}
           
   build_and_publish_docker:
     if: ${{!startsWith(github.ref, 'refs/tags/staging-')}}
@@ -74,6 +68,7 @@ jobs:
       dockerRepo: ${{ secrets.dockerRepo }}
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
+      dotnetVersion: ${{ needs.get_version.outputs.version }}
   
   build_and_publish_deb:
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_debian_package.yml@main
@@ -89,7 +84,8 @@ jobs:
       nugetGithubHost: ${{ secrets.nugetGithubHost }}
       nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
       nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
-  
+      dotnetVersion: ${{ needs.get_version.outputs.version }}
+
   build_and_publish_zip:
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_zip_package.yml@main
     secrets:
@@ -103,4 +99,5 @@ jobs:
       nugetGithubHost: ${{ secrets.nugetGithubHost }}
       nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
       nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
-    
+      dotnetVersion: ${{ needs.get_version.outputs.version }}
+
