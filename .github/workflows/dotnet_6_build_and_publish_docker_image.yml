@@ -69,7 +69,7 @@ jobs:
       working-directory: ./src
       run: | 
         cat <<EOF >Dockerfile
-        FROM mcr.microsoft.com/dotnet/aspnet:${{ secrets.dotnetVersion }}.0" AS base
+        FROM mcr.microsoft.com/dotnet/aspnet:${{ secrets.dotnetVersion }}.0 AS base
         WORKDIR /app
         EXPOSE 80
         FROM mcr.microsoft.com/dotnet/sdk:${{ secrets.dotnetVersion }}.0 AS build
