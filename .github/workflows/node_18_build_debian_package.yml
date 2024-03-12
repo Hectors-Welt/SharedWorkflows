@@ -12,7 +12,9 @@ on:
       nexusAptRepoPrereleaseHost:
         required: true      
       nexusAptRepoStagingHost:
-        required: true    
+        required: true   
+      nodeVersion:
+        required: true
 env:
   SERVICE: ${{ github.event.repository.name }}
 
@@ -37,7 +39,8 @@ jobs:
       if: ${{ steps.node-version.outputs.version == ''}}  || ${{steps.node-version.outputs.version == null}}
       uses: actions/setup-node@v2
       with:
-        node-version: 18.x
+        node-version: ${{ secrets.dotnetVersion }}.x
+
 
     - name: Prepare environment variables
       if: startsWith(github.ref, 'refs/tags/v')
