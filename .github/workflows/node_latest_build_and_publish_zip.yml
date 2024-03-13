@@ -11,6 +11,8 @@ on:
         required: true
       packageRepoPort:
         required: true
+      nodeVersion:
+        required: true
 
 jobs:     
   build_zip:
@@ -23,7 +25,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: ${{ secrets.dotnetVersion }}.x
+        node-version: ${{ secrets.nodeVersion }}.x
 
     - name: Prepare local environment variables
       if: startsWith(github.ref, 'refs/tags/v')
