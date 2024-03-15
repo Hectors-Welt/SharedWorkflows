@@ -25,21 +25,17 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v2
         
-    - name: Get Node.js version
-      id: node-version
-      run: echo "::set-output name=version::$(jq -r '.devDependencies["@types/node"]'  package.json)"
-  
     - name: Setup Node.js
-      if: ${{ steps.node-version.outputs.version != '' }}
+      if: ${{ secrets.nodeVersion != null && secrets.nodeVersion != '' }}
       uses: actions/setup-node@v2
       with:
-        node-version: ${{ steps.node-version.outputs.version }}
+        node-version: ${{ secrets.nodeVersion }}.x
 
     - name: Setup Node.js
       if: ${{ steps.node-version.outputs.version == ''}}  || ${{steps.node-version.outputs.version == null}}
       uses: actions/setup-node@v2
       with:
-        node-version: ${{ secrets.dotnetVersion }}.x
+        node-version: 18.x
 
 
     - name: Prepare environment variables
