@@ -125,11 +125,11 @@ jobs:
           PREVIOUS_SHA=$(git rev-parse "$CURRENT_SHA^2")
           echo "PREVIOUS_SHA: $PREVIOUS_SHA"
 
-          TAG_INFO=$(curl -s https://api.github.com/repos/$REPO/git/refs/tags/prerelease-$STAGING_VERSION)
+          TAG_INFO=$(curl -H "Authorization: token $GITHUB_TOKEN" -s https://api.github.com/repos/$REPO/git/refs/tags/prerelease-$STAGING_VERSION)
           
           URL=$(echo "$TAG_INFO" | jq -r '.object.url')
           
-          COMMIT_INFO=$(curl -s "$URL")          
+          COMMIT_INFO=$(curl -H "Authorization: token $GITHUB_TOKEN" -s "$URL")          
           SHA=$(echo "$COMMIT_INFO" | jq -r '.object.sha')
           echo "TAG=$SHA" >> $GITHUB_ENV
 
