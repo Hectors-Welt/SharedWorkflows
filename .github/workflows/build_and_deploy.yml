@@ -160,10 +160,11 @@ jobs:
          if [ env.TAG_STATUS == 'failure' ]; then
             echo "There was no prerelease tag found with the same version as the staging tag."
             exit 1
-         fi
-         if [ env.TAG == '' ]; then
+         elif [ env.TAG == '' ]; then
            echo "There previous commit has not the correct prerelease tag."
            exit 1
+         else  
+           echo "Check for tag and commit was successful."
          fi  
 
       - name: Check versions
