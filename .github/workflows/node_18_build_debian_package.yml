@@ -66,6 +66,7 @@ jobs:
         API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
         if [[ $API_RESPONSE == *"ref"* ]]; then
           TAG_INFO_URL=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME) | jq -r '.object.url'
+          echo tag info url: $TAG_INFO_URL
           COMMIT_SHA=$(curl -H "Authorization: token $GITHUB_TOKEN" $TAG_INFO_URL) | jq -r '.object.sha'
           echo commit sha: $COMMIT_SHA
           RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$COMMIT_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
