@@ -183,14 +183,14 @@ jobs:
         firstchar=`echo ${{env.SERVICE}} | cut -c1-1`
         ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
         echo $ENV_VAR_CLEAN
-        curl ${{ secrets.nexusAptRepoStagingHost }}pool/$firstchar/${{env.SERVICE}}/${{env.SERVICE}}_${{env.BASE_VERSION}}.$ENV_VAR_CLEAN_amd64.deb --output ${{env.SERVICE}}_${{env.VERSION}}.$ENV_VAR_CLEAN_amd64.deb 
+        curl ${{ secrets.nexusAptRepoStagingHost }}pool/$firstchar/${{env.SERVICE}}/${{env.SERVICE}}_BASE_VERSION${{env.}}.$ENV_VAR_CLEAN_amd64.deb --output ${{env.SERVICE}}_${{env.BASE_VERSION}}.$ENV_VAR_CLEAN_amd64.deb 
   
     - name: release, push deb package to nexus release apt repo 
       if: ${{ startsWith(github.ref, 'refs/tags/v') &&  env.HOTFIX_STATUS =='failure'}}
       run: |
         ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
         echo $ENV_VAR_CLEAN
-        curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@./${{env.SERVICE}}_${{env.VERSION}}.$ENV_VAR_CLEAN_amd64.deb" "${{ secrets.nexusAptRepoHost  }}"
+        curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@./${{env.SERVICE}}_${{env.BASE_VERSION}}.$ENV_VAR_CLEAN_amd64.deb" "${{ secrets.nexusAptRepoHost  }}"
     
     - name: hotfix, push deb package to nexus release apt repo
       if: ${{ startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success'}}
