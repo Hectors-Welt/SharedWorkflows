@@ -180,7 +180,7 @@ jobs:
           chmod 755 Publish/DEBIAN/prerm
           
       - name: If no release and no hotfix, set user and group to root
-        if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v')}} && env.HOTFIX_STATUS =='success')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success') }}
         run: |
           sudo chown -R root:root Publish
           
