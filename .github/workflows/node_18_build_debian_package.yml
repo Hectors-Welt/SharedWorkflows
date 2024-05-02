@@ -54,7 +54,7 @@ jobs:
         echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
 
-    - name: If Release, check if staging tag exists and get run number 
+    - name: If release, check if staging tag exists and get run number 
       if: startsWith(github.ref, 'refs/tags/v')
       id: check_staging_tag
       env:
@@ -66,6 +66,7 @@ jobs:
         API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
         if [[ $API_RESPONSE == *"ref"* ]]; then
           COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
+          echo commit sha: $COMMIT_SHA
           RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$COMMIT_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
           echo $RUN_NUMBER 
           echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
@@ -96,7 +97,7 @@ jobs:
         fi
 
     - name: If not release or hotfix, build service 
-      if: ${{!startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
+      if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
       run: |
         sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
         PUPPETEER_SKIP_DOWNLOAD=true npm i --force
@@ -107,13 +108,13 @@ jobs:
 
 
     - name: If not release or hotfix, create unit file path
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
+      if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
       run: |
         mkdir -p Publish/etc/systemd/system/
         mkdir Publish/DEBIAN
     
     - name: If not release or hotfix, Build unit file & startup script
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
+      if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
       run: |
         startup=Publish/opt/hector/${{ env.SERVICE }}/start.sh
         cat > $startup <<EOF
@@ -145,7 +146,7 @@ jobs:
         EOF
 
     - name: If not release or hotfix, Create postinstall script
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
+      if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
       run: |
         cat << EOF > Publish/DEBIAN/postinst
         #!/bin/sh
@@ -154,7 +155,7 @@ jobs:
         chmod 755 Publish/DEBIAN/postinst
 
     - name: If not release or hotfix, create preremove script
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
+      if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
       run: |
         cat << EOF > Publish/DEBIAN/prerm
         #!/bin/sh
@@ -163,7 +164,7 @@ jobs:
         chmod 755 Publish/DEBIAN/prerm
 
     - name: If not release or hotfix, build-deb-action
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
+      if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
       id: package
       uses: jiro4989/build-deb-action@v2
       with:
