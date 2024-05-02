@@ -64,15 +64,11 @@ jobs:
         STAGING_TAG_NAME="staging-$TAG_VERSION"
         REPO=${{ github.repository }}
         API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
-        echo api response $API_RESPONSE
         if [[ $API_RESPONSE == *"ref"* ]]; then
-          TAG_INFO_URL=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
-          echo tag info url: $TAG_INFO_URL
-          URL=$(echo $TAG_INFO_URL | jq -r '.object.url')
-          COMMIT_SHA=$(echo curl -H "Authorization: token $GITHUB_TOKEN" $URL) | jq -r '.object.sha'
-          echo commit sha: $COMMIT_SHA
-          RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$COMMIT_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
-          echo $RUN_NUMBER 
+          COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
+          TAG_INFO=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/tags/$COMMIT_SHA)
+          STAGING_TAG_SHA=$(echo $TAG_INFO | jq -r '.object.sha')
+          RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$STAGING_TAG_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
           echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
           echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
         else
