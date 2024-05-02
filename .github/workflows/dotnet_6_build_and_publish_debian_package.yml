@@ -122,20 +122,20 @@ jobs:
           fi
   
       - name: If no release and no hotfix, add feeds
-        if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success') }}
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
           dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
           dotnet restore
 
       - name: If no release and no hotfix, publish service
-        if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success') }}
         run: >
           dotnet publish ./src/${{ env.NAME }}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }}
           -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}
           
       - name: If no release and no hotfix, create file paths
-        if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success') }}
         run: |
           mkdir -p Publish/etc/systemd/system/
           mkdir Publish/DEBIAN
@@ -162,7 +162,7 @@ jobs:
           EOF
           
       - name: If no release and no hotfix, create postinstall script
-        if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success') }}
         run: |
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
@@ -171,7 +171,7 @@ jobs:
           chmod 755 Publish/DEBIAN/postinst
           
       - name: If no release and no hotfix, create preremove script
-        if: ${{!startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success') }}
         run: |
           cat << EOF > Publish/DEBIAN/prerm
           #!/bin/sh
