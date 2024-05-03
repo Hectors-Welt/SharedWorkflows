@@ -40,15 +40,31 @@ on:
       dockerRepo:
         required: true 
 jobs:     
+  get_version: 
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.node-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: Get Node.js version
+        id: node-version
+        run: echo "::set-output name=version::$(jq -r '.devDependencies["@types/node"]'  package.json | cut -d '.' -f 1 | tr -d '[:space:]')"
+  
   build_and_publish_docker:
+    needs: [get_version]
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_docker_image.yml@main
     secrets:
       dockerRepo: ${{ secrets.DOCKER_REPO }}
       nexusDockerUsername: ${{ secrets.NEXUS_DOCKER_USERNAME }}
       nexusDockerPassword: ${{ secrets.NEXUS_DOCKER_PASSWORD }}
       packageRegistryToken: ${{ secrets.PACKAGE_REGISTRY_TOKEN }}
+      nodeVersion: ${{ needs.get_version.outputs.version }}
+
         
   build_debian_package:
+      needs: [get_version]
       uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_18_build_debian_package.yml@main
       secrets:
         nexusAptRepoUsername: ${{ secrets.NEXUS_APT_REPO_USERNAME }}
@@ -56,11 +72,15 @@ jobs:
         nexusAptRepoHost: ${{ secrets.NEXUS_APT_REPO_HOST }}
         nexusAptRepoPrereleaseHost: ${{ secrets.NEXUS_APT_REPO_HOST_PRERELEASE }} 
         nexusAptRepoStagingHost: ${{ secrets.NEXUS_APT_REPO_HOST_STAGING }}
-        
+        nodeVersion:  ${{ needs.get_version.outputs.version }}
+              
   build_deb_and_zip:
+    needs: [get_version]
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_zip.yml@main
     secrets:
       packageRepoHost: ${{ secrets.PACKAGE_REPO_HOST }}
       packageRepoPassword: ${{ secrets.PACKAGE_REPO_PASSWORD }}
       packageRepoUsername: ${{ secrets.PACKAGE_REPO_USERNAME }}
       packageRepoPort: ${{ secrets.PACKAGE_REPO_PORT }}
+      nodeVersion:  ${{ needs.get_version.outputs.version }}
+

@@ -124,17 +124,15 @@ jobs:
           # Get the SHA of the previous commit
           PREVIOUS_SHA=$(git rev-parse "$CURRENT_SHA^2")
           echo "PREVIOUS_SHA: $PREVIOUS_SHA"
-          # Get the list of tags for the previous commit
-          TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags | jq -r '.[] | select(.object.sha == "'$PREVIOUS_SHA'") | .ref')
-          echo "TAGS: $TAGS"
-          # Check if any of the tags start with "prerelease-"
-          for TAG in $TAGS; do
-            if [[ $TAG == refs/tags/prerelease-* ]]; then
-              echo "Der vorletzte Commit wurde mit einem 'prerelease-' Tag versehen."
-              echo "TAG=$TAG" >> $GITHUB_ENV
-              break
-            fi
-          done
+
+          TAG_INFO=$(curl -H "Authorization: token $GITHUB_TOKEN" -s https://api.github.com/repos/$REPO/git/refs/tags/prerelease-$STAGING_VERSION)
+          
+          URL=$(echo "$TAG_INFO" | jq -r '.object.url')
+          
+          COMMIT_INFO=$(curl -H "Authorization: token $GITHUB_TOKEN" -s "$URL")          
+          SHA=$(echo "$COMMIT_INFO" | jq -r '.object.sha')
+          echo "TAG=$SHA" >> $GITHUB_ENV
+
   
       - name: Check for commit
         if: ${{startsWith(github.ref, 'refs/tags/v')  && env.HOTFIX_STATUS =='failure'}}
@@ -157,10 +155,17 @@ jobs:
           fi
   
       - name: Check versions
-        if: (env.TAG_STATUS == 'failure' || env.TAG == '') && startsWith(github.ref, 'refs/tags/staging-')
+        if:  startsWith(github.ref, 'refs/tags/staging-')
         run: |
-          echo "One or more conditions are not met, cancelling workflow."
-          exit 1
+         if [ env.TAG_STATUS == 'failure' ]; then
+            echo "There was no prerelease tag found with the same version as the staging tag."
+            exit 1
+         elif [ env.TAG == '' ]; then
+           echo "There previous commit has not the correct prerelease tag."
+           exit 1
+         else  
+           echo "Check for tag and commit was successful."
+         fi  
 
       - name: Check versions
         if: ${{(env.TAG_STATUS == 'failure' || env.STATUS == 'failure') && startsWith(github.ref, 'refs/tags/v')  && env.HOTFIX_STATUS =='failure'}}
@@ -220,9 +225,9 @@ jobs:
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
 
   node:
-    needs: check_runtime
-    if: needs.check_runtime.outputs.runtime == 'node'
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
+    needs: [check_runtime]
+    if: needs.check_runtime.outputs.runtime == 'node'
     secrets:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
       nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}

@@ -11,20 +11,31 @@ on:
         required: true
       packageRepoPort:
         required: true
+      nodeVersion:
+        required: true
 
 jobs:     
   build_zip:
     runs-on: windows-latest
+    env:
+      NODE_VERSION: ${{ secrets.nodeVersion }}    
     
     steps:
     - name: Checkout sources
       uses: actions/checkout@v2
 
     - name: Setup Node.js
+      if: ${{ env.NODE_VERSION != null && env.NODE_VERSION != '' }}
       uses: actions/setup-node@v2
       with:
-        node-version: latest
-
+        node-version: ${{ secrets.nodeVersion }}.x
+        
+    - name: Setup Node.js
+      if: ${{ env.NODE_VERSION == null || env.NODE_VERSION == '' }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: 18.x
+        
     - name: Prepare local environment variables
       if: startsWith(github.ref, 'refs/tags/v')
       run: |
@@ -110,7 +121,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: latest
+        node-version: ${{ secrets.dotnetVersion }}.x
         
     - name: Prepare local environment variables
       if: startsWith(github.ref, 'refs/tags/v')
