@@ -42,7 +42,7 @@ jobs:
         with:
           dotnet-version: ${{ secrets.dotnetVersion }}.x
           
-      - name: Prepare environment variables
+      - name: Prepare environment variables for release
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
@@ -50,7 +50,7 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
           
-      - name: Prepare environment variables
+      - name: Prepare environment variables for staging
         if: startsWith(github.ref, 'refs/tags/staging-')
         run: |
           echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
@@ -58,7 +58,7 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
 
-      - name: Prepare environment variables
+      - name: Prepare environment variables for prerelease
         if: startsWith(github.ref, 'refs/tags/prerelease-')
         run: |
           echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
@@ -67,7 +67,7 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
 
-      - name: Check if staging tag exists and get run number
+      - name: If release, check if staging tag exists and get run number
         if: startsWith(github.ref, 'refs/tags/v')
         id: check_staging_tag
         env:
@@ -88,7 +88,7 @@ jobs:
           fi
 
     
-      - name: Check if hotfix
+      - name: If release, check if hotfix
         if: startsWith(github.ref, 'refs/tags/v')
         id: hotfix_check
         env:
@@ -119,37 +119,38 @@ jobs:
             echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
           fi 
           
-      - name: add feeds
+      - name: if no release, add feeds
+        if: ${{!startsWith(github.ref, 'refs/tags/v') }}
         working-directory: ./src
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
           dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
           dotnet restore
       
-      - name: Build
+      - name: If no release, build service
         working-directory: ./src
         if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}  
         run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
      
-      - name: Zip build results
+      - name: If no release, zip build results
         working-directory: ./src
         if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}  
         run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .
 
-      - name: Set run number as env variable
+      - name: If release, set run number as env variable
         working-directory: ./src
         if:  ${{ startsWith(github.ref, 'refs/tags/v') &&  env.HOTFIX_STATUS =='failure'}}
         run: |
            ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
            echo ENV_VAR_CLEAN=$(echo $ENV_VAR_CLEAN) >> $GITHUB_ENV
            
-      - name: Zip build results
+      - name: If release, zip build results
         working-directory: ./src
         if:  ${{ startsWith(github.ref, 'refs/tags/v') &&  env.HOTFIX_STATUS =='failure'}}
         run: |
            curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/staging/${{env.NAME}}/${{env.NAME}}-${{ env.BASE_VERSION }}.${{env.ENV_VAR_CLEAN}}.zip --output ${{env.NAME}}-${{ env.BASE_VERSION }}.${{env.ENV_VAR_CLEAN}}.zip
 
-      - name: copy file via ssh password
+      - name: copy file via ssh password to staging repo
         if: startsWith(github.ref, 'refs/tags/staging-')
         uses: appleboy/scp-action@master
         with:
@@ -161,7 +162,7 @@ jobs:
           target: staging/${{ env.NAME }}
           strip_components: 3
 
-      - name: copy file via ssh password
+      - name: copy file via ssh password to release repo as hotfix
         if:  ${{ startsWith(github.ref, 'refs/tags/v')  &&  env.HOTFIX_STATUS =='success'}}
         uses: appleboy/scp-action@master
         with:
@@ -173,7 +174,7 @@ jobs:
           target: release/${{ env.NAME }}
           strip_components: 3
 
-      - name: copy file via ssh password
+      - name: copy file via ssh password to release repo
         if:   ${{ startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='failure'}}
         uses: appleboy/scp-action@master
         with:
@@ -185,7 +186,7 @@ jobs:
           target: release/${{ env.NAME }}
           strip_components: 2
           
-      - name: copy file via ssh password
+      - name: copy file via ssh password to prerelease repo
         if: startsWith(github.ref, 'refs/tags/prerelease-')
         uses: appleboy/scp-action@master
         with:
