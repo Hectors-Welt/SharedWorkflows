@@ -65,6 +65,7 @@ jobs:
          echo $(sed -n 's|<TargetFramework>\(.*\)</TargetFramework>|\1|p' *.csproj | sed 's/net//' | cut -d '.' -f 1 | tr -d '[:space:]')---
 
   run_tests:
+    needs: [get_version]
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_test.yml@main
     secrets:
       packageRepoHost: ${{ secrets.packageRepoHost }}
@@ -77,6 +78,7 @@ jobs:
       nugetGithubHost: ${{ secrets.nugetGithubHost }}
       nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
       nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
+      dotnetVersion: ${{ needs.get_version.outputs.version }}
       
   build_and_publish_docker:
     if: ${{!startsWith(github.ref, 'refs/tags/staging-')}}
