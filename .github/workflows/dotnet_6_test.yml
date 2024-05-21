@@ -23,6 +23,8 @@ on:
         required: true
       nugetGithubPassword:
         required: true
+      dotnetVersion:
+        required: true
       
       
 env:
