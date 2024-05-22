@@ -120,7 +120,7 @@ jobs:
           fi 
           
       - name: if no release, add feeds
-        if: ${{!startsWith(github.ref, 'refs/tags/v') }}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}  
         working-directory: ./src
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
