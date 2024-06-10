@@ -72,8 +72,18 @@ jobs:
       - name: Zip build results
         run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .
 
-      - name: Publish zip to nexus
+      - name: Publish zip to nexus release repo
+        if: startsWith(github.ref, 'refs/tags/v')
         run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows/${{ env.NAME}}-${{ env.VERSION }}.zip
+
+      - name: Publish zip to nexus staging repo
+        if: startsWith(github.ref, 'refs/tags/staging-')
+        run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows-stg/${{ env.NAME}}-${{ env.VERSION }}.zip
+
+
+      - name: Publish zip to nexus prerelease repo
+        if: startsWith(github.ref, 'refs/tags/prerelease-')
+        run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows-pre/${{ env.NAME}}-${{ env.VERSION }}.zip
 
       - name: copy file via ssh password
         if: startsWith(github.ref, 'refs/tags/v')
