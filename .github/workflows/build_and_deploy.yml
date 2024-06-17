@@ -148,7 +148,7 @@ jobs:
         if: ${{startsWith(github.ref, 'refs/tags/v')  && env.HOTFIX_STATUS =='failure'}}
         id: commit
         run: |
-          PREVIOUS_COMMIT=$(git rev-parse "${{ env.CURRENT_COMMIT }}^1")
+          PREVIOUS_COMMIT=$(git rev-parse "${{ env.CURRENT_COMMIT }}^2")
           echo "Previous Commit: $PREVIOUS_COMMIT"
           if [ "$PREVIOUS_COMMIT" == "${{ env.STAGING_COMMIT }}" ]; then
             echo "TAG_STATUS=success" >> $GITHUB_ENV
