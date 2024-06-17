@@ -132,7 +132,7 @@ jobs:
           CURRENT_SHA="${{ github.sha }}"
           echo "CURRENT_SHA: $CURRENT_SHA"
           # Get the SHA of the previous commit
-          PREVIOUS_SHA=$(git rev-parse "$CURRENT_SHA^2")
+          PREVIOUS_SHA=$(git rev-parse "$CURRENT_SHA^")
           echo "PREVIOUS_SHA: $PREVIOUS_SHA"
 
           TAG_INFO=$(curl -H "Authorization: token $GITHUB_TOKEN" -s https://api.github.com/repos/$REPO/git/refs/tags/prerelease-$STAGING_VERSION)
