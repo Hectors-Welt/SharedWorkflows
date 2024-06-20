@@ -81,7 +81,7 @@ jobs:
       dotnetVersion: ${{ needs.get_version.outputs.version }}
       
   build_and_publish_docker:
-    if: ${{!startsWith(github.ref, 'refs/tags/staging-')}}
+    if: ${{!startsWith(github.ref, 'refs/tags/staging-') && needs.check_if_commit_is_valid.result == 'success' }} 
     needs: [get_version]
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_docker_image.yml@main
     secrets:
@@ -98,6 +98,7 @@ jobs:
   
   build_and_publish_deb:
     needs: [get_version]
+    if: needs.check_if_commit_is_valid.result == 'success'
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_debian_package.yml@main
     secrets:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
@@ -115,6 +116,7 @@ jobs:
 
   build_and_publish_zip:
     needs: [get_version]
+    if: needs.check_if_commit_is_valid.result == 'success'
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_zip_package.yml@main
     secrets:
       packageRepoHost: ${{ secrets.packageRepoHost }}
