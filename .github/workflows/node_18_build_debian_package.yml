@@ -184,7 +184,7 @@ jobs:
         echo ENV_VAR_CLEAN=$(echo $ENV_VAR_CLEAN) >> $GITHUB_ENV
         FIRST_CHAR=`echo ${{env.SERVICE}} | cut -c1-1`
         echo FIRST_CHAR=$(echo $FIRST_CHAR) >> $GITHUB_ENV
-        curl --fail ${{ secrets.nexusAptRepoStagingHost }}pool/${{env.FIRST_CHAR}}/${{env.SERVICE}}/${{env.SERVICE}}_${{env.BASE_VERSION}}.${{env.ENV_VAR_CLEAN}}_amd64.deb --output ${{env.SERVICE}}_${{env.BASE_VERSION}}.${{env.ENV_VAR_CLEAN}}_amd64.deb 
+        curl --fail ${{ secrets.nexusAptRepoStagingHost }}pool/${FIRST_CHAR}/${{env.SERVICE}}/${{env.SERVICE}}_${{env.BASE_VERSION}}.${ENV_VAR_CLEAN}_amd64.deb --output ${{env.SERVICE}}_${{env.BASE_VERSION}}.${ENV_VAR_CLEAN}_amd64.deb 
   
     - name: release, push deb package to nexus release apt repo 
       if: ${{ startsWith(github.ref, 'refs/tags/v') &&  env.HOTFIX_STATUS =='failure'}}
