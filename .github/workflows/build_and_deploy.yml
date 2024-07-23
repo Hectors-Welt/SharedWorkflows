@@ -122,7 +122,7 @@ jobs:
           fi
           
       - name: Check previous commit for prerelease tag
-        if: startsWith(github.ref, 'refs/tags/staging-') 
+        if: ${{startsWith(github.ref, 'refs/tags/staging-') && env.HOTFIX_STATUS =='failure'}}
         id: check_tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
