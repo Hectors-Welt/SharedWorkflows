@@ -83,6 +83,9 @@ jobs:
             RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_branch == "'$STAGING_TAG_NAME'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
             echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
             echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
+            STAGING_TAG=$(git tag --list 'staging-*' --sort=-v:refname | head -n 1)
+            STAGING_TAG_VERSION=${STAGING_TAG#staging-}
+            echo "STAGING_TAG_VERSION=$STAGING_TAG_VERSION" >> $GITHUB_ENV
           else
             echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
           fi
@@ -119,6 +122,17 @@ jobs:
             echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
           fi 
           
+      - name: Compare version to staging version
+        if: ${{(startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
+        run: |
+          if [ "$BASE_VERSION" != "$STAGING_TAG_VERSION" ]; then
+            echo "BASE_VERSION ($BASE_VERSION) does not match STAGING_TAG_VERSION ($STAGING_TAG_VERSION). Exiting workflow."
+            exit 1
+          else
+            echo "BASE_VERSION matches STAGING_TAG_VERSION. Continuing workflow."
+          fi
+        shell: bash
+
       - name: if no release, add feeds
         if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}  
         working-directory: ./src
