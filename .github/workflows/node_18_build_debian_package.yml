@@ -26,6 +26,8 @@ jobs:
     steps:
     - name: Checkout sources
       uses: actions/checkout@v2
+      with: 
+        fetch-depth: 0
         
     - name: Setup Node.js
       if: ${{ env.NODE_VERSION  != null  &&  env.NODE_VERSION != '' }}
