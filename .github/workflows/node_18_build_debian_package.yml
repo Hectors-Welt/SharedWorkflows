@@ -56,7 +56,7 @@ jobs:
         echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
 
-    - name: If release, check if staging tag exists and get run number 
+    - name: If 'v' tag, check if staging tag exists and get run number 
       if: startsWith(github.ref, 'refs/tags/v')
       id: check_staging_tag
       env:
@@ -80,7 +80,7 @@ jobs:
           echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
         fi
 
-    - name: If release, check if hotfix
+    - name: If 'v' tag, check if hotfix
       if: startsWith(github.ref, 'refs/tags/v')
       id: hotfix_check
       env:
@@ -111,7 +111,7 @@ jobs:
           echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
         fi
 
-    - name: Compare version to staging version
+    - name: If 'v' tag, compare version to staging version
       if: ${{(startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
       run: |
         if [ "$BASE_VERSION" != "$STAGING_TAG_VERSION" ]; then

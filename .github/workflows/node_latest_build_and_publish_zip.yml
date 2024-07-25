@@ -68,42 +68,52 @@ jobs:
         SERVICE_VERSION=$(jq -r .serviceVersion package.json)
         echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
 
-    - name: Check if hotfix
+    - name: If release, check if hotfix
       if: startsWith(github.ref, 'refs/tags/v')
       id: hotfix_check
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Get the latest version with the prefix "v"
-        LATEST_VERSION=$(git tag | grep "^v" | sort -V | tail -n 1 | cut -d 'v' -f 2)
-    
-        # Get the current version (remove the "v" prefix)
-        CURRENT_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/})
-    
-        # Get the patch versions
-        LATEST_PATCH_VERSION=$(echo $LATEST_VERSION | cut -d '.' -f 3)
-        CURRENT_PATCH_VERSION=$(echo $CURRENT_VERSION | cut -d '.' -f 3)
-    
-        # Check if the current patch version is one higher than the latest patch version
-        if [[ $((CURRENT_PATCH_VERSION)) == $((LATEST_PATCH_VERSION + 1)) ]]; then
-          echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+      
+        REPO="${{ github.repository }}"
+        GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+        CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+
+        IFS='.' read -ra VERSION <<< "$CURRENT_TAG"
+        MAJOR=${VERSION[0]#v}
+        MINOR=${VERSION[1]}
+        PATCH=${VERSION[2]}
+
+        if [ "$PATCH" -gt 0 ]; then
+          PATCH=$((PATCH-1))
+          HOTFIX_TAG="v$MAJOR.$MINOR.$PATCH"
+
+          TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
+
+          if echo $TAGS | jq -e --arg tag "refs/tags/$HOTFIX_TAG" '.[] | select(.ref == $tag)' > /dev/null; then
+            echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+          else
+            echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
+          fi
         else
           echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
-        fi  
+        fi
     
-    - name: Build service
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
+    - name: If no 'v' tag, build service
+      if: ${{!startsWith(github.ref, 'refs/tags/v')}} 
       run: |
         npm install
         (Get-Content package.json) -replace '${{env.SERVICE_VERSION}}','${{env.VERSION}}.${{env.RUN_NUMBER}}' | Set-Content package.json
         npm run build
         npm run package
         
-    - name: Zip build results
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
+    - name: If no 'v' tag, zip build results
+      if: ${{!startsWith(github.ref, 'refs/tags/v')}} 
       working-directory: ./build
       run: Compress-Archive -Path ./*  -DestinationPath ./${{env.NAME}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
    
-    - name: Upload zip
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
+    - name: If no 'v' tag, upload zip
+      if: ${{!startsWith(github.ref, 'refs/tags/v')}} 
       uses: actions/upload-artifact@v3
       with:
         name: project-zip
@@ -156,7 +166,7 @@ jobs:
         echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
 
 
-    - name: Check if staging tag exists and get run number
+    - name: If 'v' tag, check if staging tag exists and get run number
       if: startsWith(github.ref, 'refs/tags/v')
       id: check_staging_tag
       env:
@@ -178,28 +188,38 @@ jobs:
           echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
         fi
         
-    - name: Check if hotfix
+    - name: If 'v' tag, check if hotfix
       if: startsWith(github.ref, 'refs/tags/v')
       id: hotfix_check
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Get the latest version with the prefix "v"
-        LATEST_VERSION=$(git tag | grep "^v" | sort -V | tail -n 1 | cut -d 'v' -f 2)
-    
-        # Get the current version (remove the "v" prefix)
-        CURRENT_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/})
-    
-        # Get the patch versions
-        LATEST_PATCH_VERSION=$(echo $LATEST_VERSION | cut -d '.' -f 3)
-        CURRENT_PATCH_VERSION=$(echo $CURRENT_VERSION | cut -d '.' -f 3)
-    
-        # Check if the current patch version is one higher than the latest patch version
-        if [[ $((CURRENT_PATCH_VERSION)) == $((LATEST_PATCH_VERSION + 1)) ]]; then
-          echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+      
+        REPO="${{ github.repository }}"
+        GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+        CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+
+        IFS='.' read -ra VERSION <<< "$CURRENT_TAG"
+        MAJOR=${VERSION[0]#v}
+        MINOR=${VERSION[1]}
+        PATCH=${VERSION[2]}
+
+        if [ "$PATCH" -gt 0 ]; then
+          PATCH=$((PATCH-1))
+          HOTFIX_TAG="v$MAJOR.$MINOR.$PATCH"
+
+          TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
+
+          if echo $TAGS | jq -e --arg tag "refs/tags/$HOTFIX_TAG" '.[] | select(.ref == $tag)' > /dev/null; then
+            echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+          else
+            echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
+          fi
         else
           echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
-        fi  
+        fi
         
-    - name: Compare version to staging version
+    - name: If 'v' tag, compare version to staging version
       if: ${{(startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
       run: |
         if [ "$BASE_VERSION" != "$STAGING_TAG_VERSION" ]; then
@@ -211,30 +231,25 @@ jobs:
       shell: bash
   
     
-    - name: Download a single artifact
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}} || ${{startsWith(github.ref, 'refs/tags/v')}} && ${{env.HOTFIX_STATUS =='success'}}
+    - name: If 'v' tag, Download a single artifact
+      if: ${{!startsWith(github.ref, 'refs/tags/v')}}
       uses: actions/download-artifact@v3
       with:
         name: project-zip
             
-    - name: Zip build results
-      if: startsWith(github.ref, 'refs/tags/v') &&  ${{env.HOTFIX_STATUS =='failure'}}
+    - name: If 'v' tag, get zip
+      if: startsWith(github.ref, 'refs/tags/v')
       run: |
          ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
          echo $ENV_VAR_CLEAN
          curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/${{env.NAME}}/${{env.NAME}}-${{env.VERSION}}.zip --output ${{env.NAME}}-${{ env.BASE_VERSION }}.$ENV_VAR_CLEAN.zip
-
 
     - name: Publish zip to nexus prerelease repo
       if: startsWith(github.ref, 'refs/tags/prerelease-')
       run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows-pre/${{ env.NAME}}-${{ env.VERSION }}.zip
 
     - name: Publish zip to nexus release repo
-      if: startsWith(github.ref, 'refs/tags/v')  &&  ${{env.HOTFIX_STATUS =='success'}}
-      run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows/${{ env.NAME}}-${{ env.VERSION }}.zip
-   
-    - name: Publish zip to nexus release repo
-      if: startsWith(github.ref, 'refs/tags/v')  &&  ${{env.HOTFIX_STATUS =='failure'}}
+      if: startsWith(github.ref, 'refs/tags/v')
       run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.NAME}}-${{ env.BASE_VERSION }}.${{env.ENV_VAR_CLEAN}}.zip https://nexus.hectorts.de/repository/windows/${{ env.NAME}}-${{ env.BASE_VERSION }}.${{env.ENV_VAR_CLEAN}}.zip
 
     - name: Publish zip to nexus staging repo
@@ -254,22 +269,9 @@ jobs:
         target: staging/${{ env.NAME }}
         timeout: 300s
         command_timeout: 30m
-          
-    - name: copy file via ssh password
-      if: startsWith(github.ref, 'refs/tags/v')  &&  ${{env.HOTFIX_STATUS =='success'}}
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.packageRepoHost }}
-        username: ${{ secrets.packageRepoUsername }}
-        password: ${{ secrets.packageRepoPassword }}
-        port: ${{ secrets.packageRepoPort }}
-        source: ${{ env.NAME }}-${{ env.VERSION }}.zip
-        target: release/${{ env.NAME }}
-        timeout: 300s
-        command_timeout: 30m
 
     - name: copy file via ssh password
-      if: startsWith(github.ref, 'refs/tags/v') &&  ${{env.HOTFIX_STATUS =='failure'}}
+      if: startsWith(github.ref, 'refs/tags/v')
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.packageRepoHost }}
