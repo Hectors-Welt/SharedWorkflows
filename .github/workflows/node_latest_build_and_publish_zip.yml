@@ -103,6 +103,8 @@ jobs:
     - name: If no 'v' tag, build service
       if: ${{!startsWith(github.ref, 'refs/tags/v')}} 
       run: |
+        sed -i '/serviceName/c\"serviceName": "${{env.SERVICE}}",' ./package.json
+        sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
         npm install
         npm run build
         npm run package
