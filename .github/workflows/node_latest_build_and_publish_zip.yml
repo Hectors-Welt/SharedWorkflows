@@ -11,6 +11,10 @@ on:
         required: true
       packageRepoPort:
         required: true
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
       nodeVersion:
         required: true
 env:
@@ -216,7 +220,6 @@ jobs:
         fi
       shell: bash
   
-    
     - name: If 'v' tag, Download a single artifact
       if: ${{!startsWith(github.ref, 'refs/tags/v')}}
       uses: actions/download-artifact@v3
