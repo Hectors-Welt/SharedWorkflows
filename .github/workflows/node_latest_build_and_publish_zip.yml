@@ -112,14 +112,14 @@ jobs:
     - name: If no 'v' tag, zip build results
       if: ${{!startsWith(github.ref, 'refs/tags/v')}} 
       working-directory: ./build
-      run: Compress-Archive -Path ./*  -DestinationPath ./${{env.NAME}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
+      run: Compress-Archive -Path ./*  -DestinationPath ./${{env.SERVICE}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
    
     - name: If no 'v' tag, upload zip
       if: ${{!startsWith(github.ref, 'refs/tags/v')}} 
       uses: actions/upload-artifact@v3
       with:
         name: project-zip
-        path: build/${{env.NAME}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
+        path: build/${{env.SERVICE}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
         retention-days: 1
           
   publish_zip:
