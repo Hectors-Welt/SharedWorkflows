@@ -52,16 +52,6 @@ jobs:
         id: node-version
         run: echo "::set-output name=version::$(jq -r '.devDependencies["@types/node"]'  package.json | cut -d '.' -f 1 | tr -d '[:space:]')"
   
-  build_and_publish_docker:
-    needs: [get_version]
-    uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_docker_image.yml@main
-    secrets:
-      dockerRepo: ${{ secrets.dockerRepo }}
-      nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
-      nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
-      packageRegistryToken: ${{ secrets.PACKAGE_REGISTRY_TOKEN }}
-      nodeVersion: ${{ needs.get_version.outputs.version }}
-
         
   build_debian_package:
       needs: [get_version]
