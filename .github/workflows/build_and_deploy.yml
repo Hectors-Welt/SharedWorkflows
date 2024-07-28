@@ -44,24 +44,41 @@ jobs:
   check_if_hotfix:
     runs-on: ubuntu-latest
     outputs:
-      HOTFIX_STATUS: ${{ steps.check_hotfix.outputs.HOTFIX_STATUS }}
+      HOTFIX_STATUS: ${{ steps.hotfix_check.outputs.result }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # Holt das gesamte Repository inklusive aller Tags
-
-      - name: Check if hotfix
-        id: check_hotfix
+      - name: If 'v' tag, check if hotfix
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: hotfix_check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if git tag --list | grep -q '^hotfix-'; then
-            echo "HOTFIX_STATUS=true" >> $GITHUB_ENV
-            echo "::set-output name=HOTFIX_STATUS::true"
+        
+          REPO="${{ github.repository }}"
+          GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+
+          IFS='.' read -ra VERSION <<< "$CURRENT_TAG"
+          MAJOR=${VERSION[0]#v}
+          MINOR=${VERSION[1]}
+          PATCH=${VERSION[2]}
+
+          if [ "$PATCH" -gt 0 ]; then
+            PATCH=$((PATCH-1))
+            HOTFIX_TAG="v$MAJOR.$MINOR.$PATCH"
+
+            TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
+
+            if echo $TAGS | jq -e --arg tag "refs/tags/$HOTFIX_TAG" '.[] | select(.ref == $tag)' > /dev/null; then
+              echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+              echo "::set-output name=result::true"
+            else
+              echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
+            echo "::set-output name=result::false"            
+            fi
           else
-            echo "HOTFIX_STATUS=false" >> $GITHUB_ENV
-            echo "::set-output name=HOTFIX_STATUS::false"
+            echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
+            echo "::set-output name=result::false"
           fi
-        shell: bash
 
   check_for_staging_if_v_tag:
     needs: check_if_hotfix
