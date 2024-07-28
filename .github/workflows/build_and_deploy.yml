@@ -80,7 +80,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/})
-          TAG_VERSION=$(BASE_VERSION)
+          TAG_VERSION=$BASE_VERSION
           STAGING_TAG_NAME="staging-$TAG_VERSION"
           REPO=${{ github.repository }}
           API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
