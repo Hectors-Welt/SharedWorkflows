@@ -11,9 +11,15 @@ on:
         required: true
       packageRepoPort:
         required: true
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
       nodeVersion:
         required: true
-
+env:
+  SERVICE: ${{ github.event.repository.name }}
+  
 jobs:     
   build_zip:
     runs-on: windows-latest
@@ -62,12 +68,7 @@ jobs:
         chcp 65001 #set code page to utf-8
         echo RUN_NUMBER=$(echo ${{github.run_number}}) >> $env:GITHUB_ENV
         echo TAG_NAME=$(echo ${{github.ref_name}}) >> $env:GITHUB_ENV
-        echo NAME=$(echo ClubAppService) >> $env:GITHUB_ENV
-        NAME=$(jq -r .serviceName package.json)
-        echo "NAME=$NAME" >> $GITHUB_ENV
-        SERVICE_VERSION=$(jq -r .serviceVersion package.json)
-        echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
-
+        
     - name: If release, check if hotfix
       if: startsWith(github.ref, 'refs/tags/v')
       id: hotfix_check
@@ -102,22 +103,23 @@ jobs:
     - name: If no 'v' tag, build service
       if: ${{!startsWith(github.ref, 'refs/tags/v')}} 
       run: |
+        sed -i '/serviceName/c\"serviceName": "${{env.SERVICE}}",' ./package.json
+        sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}.${{ env.RUN_NUMBER }}",' ./package.json
         npm install
-        (Get-Content package.json) -replace '${{env.SERVICE_VERSION}}','${{env.VERSION}}.${{env.RUN_NUMBER}}' | Set-Content package.json
         npm run build
         npm run package
         
     - name: If no 'v' tag, zip build results
       if: ${{!startsWith(github.ref, 'refs/tags/v')}} 
       working-directory: ./build
-      run: Compress-Archive -Path ./*  -DestinationPath ./${{env.NAME}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
+      run: Compress-Archive -Path ./*  -DestinationPath ./${{env.SERVICE}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
    
     - name: If no 'v' tag, upload zip
       if: ${{!startsWith(github.ref, 'refs/tags/v')}} 
       uses: actions/upload-artifact@v3
       with:
         name: project-zip
-        path: build/${{env.NAME}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
+        path: build/${{env.SERVICE}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
         retention-days: 1
           
   publish_zip:
@@ -127,44 +129,31 @@ jobs:
     steps:
     - name: Checkout sources
       uses: actions/checkout@v2
+      with: 
+        fetch-depth: 0
 
     - name: Setup Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: ${{ secrets.dotnetVersion }}.x
+        node-version: ${{ secrets.nodeVersion }}.x
         
     - name: Prepare local environment variables
       if: startsWith(github.ref, 'refs/tags/v')
       run: |
-        chcp 65001 #set code page to utf-8
-        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $env:GITHUB_ENV
-        echo VERSION=$($env:GITHUB_REF -replace "refs/tags/v")  >> $env:GITHUB_ENV
+        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
+        echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
   
     - name: Prepare local environment variables
       if: startsWith(github.ref, 'refs/tags/staging-')
       run: |
-        chcp 65001 #set code page to utf-8
-        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $env:GITHUB_ENV
-        echo VERSION=$($env:GITHUB_REF -replace "refs/tags/staging-")  >> $env:GITHUB_ENV
+        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
+        echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
         
     - name: Prepare local environment variables
       if: startsWith(github.ref, 'refs/tags/prerelease-')
       run: |
-        chcp 65001 #set code page to utf-8
-        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $env:GITHUB_ENV
-        echo VERSION=$($env:GITHUB_REF -replace "refs/tags/prerelease-")  >> $env:GITHUB_ENV
-    
-    - name: Prepare global environment variables
-      run: |
-        chcp 65001 #set code page to utf-8
-        echo RUN_NUMBER=$(echo ${{github.run_number}}) >> $env:GITHUB_ENV
-        echo TAG_NAME=$(echo ${{github.ref_name}}) >> $env:GITHUB_ENV
-        echo NAME=$(echo ClubAppService) >> $env:GITHUB_ENV
-        NAME=$(jq -r .serviceName package.json)
-        echo "NAME=$NAME" >> $GITHUB_ENV
-        SERVICE_VERSION=$(jq -r .serviceVersion package.json)
-        echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
-
+        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
+        echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
 
     - name: If 'v' tag, check if staging tag exists and get run number
       if: startsWith(github.ref, 'refs/tags/v')
@@ -230,7 +219,6 @@ jobs:
         fi
       shell: bash
   
-    
     - name: If 'v' tag, Download a single artifact
       if: ${{!startsWith(github.ref, 'refs/tags/v')}}
       uses: actions/download-artifact@v3
@@ -242,20 +230,19 @@ jobs:
       run: |
          ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
          echo $ENV_VAR_CLEAN
-         curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/${{env.NAME}}/${{env.NAME}}-${{env.VERSION}}.zip --output ${{env.NAME}}-${{ env.BASE_VERSION }}.$ENV_VAR_CLEAN.zip
+         curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/${{env.SERVICE}}/${{env.SERVICE}}-${{env.VERSION}}.zip --output ${{env.SERVICE}}-${{ env.BASE_VERSION }}.$ENV_VAR_CLEAN.zip
 
     - name: Publish zip to nexus prerelease repo
       if: startsWith(github.ref, 'refs/tags/prerelease-')
-      run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows-pre/${{ env.NAME}}-${{ env.VERSION }}.zip
+      run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.SERVICE}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows-pre/${{ env.SERVICE}}-${{ env.VERSION }}.zip
 
     - name: Publish zip to nexus release repo
       if: startsWith(github.ref, 'refs/tags/v')
-      run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.NAME}}-${{ env.BASE_VERSION }}.${{env.ENV_VAR_CLEAN}}.zip https://nexus.hectorts.de/repository/windows/${{ env.NAME}}-${{ env.BASE_VERSION }}.${{env.ENV_VAR_CLEAN}}.zip
+      run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.SERVICE}}-${{ env.BASE_VERSION }}.${{env.ENV_VAR_CLEAN}}.zip https://nexus.hectorts.de/repository/windows/${{ env.NAME}}-${{ env.BASE_VERSION }}.${{env.ENV_VAR_CLEAN}}.zip
 
     - name: Publish zip to nexus staging repo
       if: startsWith(github.ref, 'refs/tags/staging-')
-      run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows-stg/${{ env.NAME}}-${{ env.VERSION }}.zip
-
+      run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.SERVICE}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows-stg/${{ env.SERVICE}}-${{ env.VERSION }}.zip
 
     - name: copy file via ssh password
       if: startsWith(github.ref, 'refs/tags/staging-')
@@ -265,8 +252,8 @@ jobs:
         username: ${{ secrets.packageRepoUsername }}
         password: ${{ secrets.packageRepoPassword }}
         port: ${{ secrets.packageRepoPort }}
-        source: ${{ env.NAME }}-${{ env.VERSION }}.zip
-        target: staging/${{ env.NAME }}
+        source: ${{ env.SERVICE }}-${{ env.VERSION }}.zip
+        target: staging/${{ env.SERVICE }}
         timeout: 300s
         command_timeout: 30m
 
@@ -278,8 +265,8 @@ jobs:
         username: ${{ secrets.packageRepoUsername }}
         password: ${{ secrets.packageRepoPassword }}
         port: ${{ secrets.packageRepoPort }}
-        source: ./${{ env.NAME}}-${{ env.BASE_VERSION }}.${{env.ENV_VAR_CLEAN}}.zip
-        target: release/${{ env.NAME }}
+        source: ./${{ env.SERVICE}}-${{ env.BASE_VERSION }}.${{env.ENV_VAR_CLEAN}}.zip
+        target: release/${{ env.SERVICE }}
         timeout: 300s
         command_timeout: 30m
           
@@ -291,7 +278,7 @@ jobs:
         username: ${{ secrets.packageRepoUsername }}
         password: ${{ secrets.PackageRepoPassword }}
         port: ${{ secrets.packageRepoPort}}
-        source: ${{ env.NAME }}-${{ env.VERSION }}.zip
-        target: prerelease/${{ env.NAME }}
+        source: ${{ env.SERVICE }}-${{ env.VERSION }}.zip
+        target: prerelease/${{ env.SERVICE }}
         timeout: 300s
         command_timeout: 30m
