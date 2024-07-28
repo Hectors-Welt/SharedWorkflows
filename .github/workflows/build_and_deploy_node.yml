@@ -41,6 +41,8 @@ on:
         required: true 
       isHotfix:
         required: true
+      stagingVersion:
+        required: true
 
 jobs:     
   get_version: 
