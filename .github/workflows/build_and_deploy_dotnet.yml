@@ -57,13 +57,13 @@ jobs:
         if [ "${{ secrets.stagingVersion }}" = "6.6.1" ]; then
           echo "Staging Version matches expected value: true"
         else
-          echo "Staging Version matches expected value: false"
+          echo "Staging Version not matching expected value: false"
         fi
 
         if [ "${{ secrets.isHotfix }}" = "true" ]; then
           echo "Is Hotfix matches expected value: true"
         else
-          echo "Is Hotfix matches expected value: false"
+          echo "Is Hotfix not matching expected value: false"
         fi
   get_version: 
     runs-on: ubuntu-latest
