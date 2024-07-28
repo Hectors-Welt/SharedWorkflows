@@ -25,7 +25,8 @@ on:
         required: true
       dotnetVersion:
         required: true
- 
+      stagingRunNumber:
+        required: true
 env:
   SERVICE: ${{ github.event.repository.name }}
         
@@ -67,72 +68,6 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
 
-      - name: If 'v' tag, check if staging tag exists and get run number
-        if: startsWith(github.ref, 'refs/tags/v')
-        id: check_staging_tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG_VERSION=${{ env.BASE_VERSION }}
-          STAGING_TAG_NAME="staging-$TAG_VERSION"
-          REPO=${{ github.repository }}
-          API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
-          echo $API_RESPONSE
-          if [[ $API_RESPONSE == *"ref"* ]]; then
-            COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
-            RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_branch == "'$STAGING_TAG_NAME'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
-            echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
-            echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
-            STAGING_TAG=$(git tag --list 'staging-*' --sort=-v:refname | head -n 1)
-            STAGING_TAG_VERSION=${STAGING_TAG#staging-}
-            echo "STAGING_TAG_VERSION=$STAGING_TAG_VERSION" >> $GITHUB_ENV
-          else
-            echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
-          fi
-
-    
-      - name: If 'v' tag, check if hotfix
-        if: startsWith(github.ref, 'refs/tags/v')
-        id: hotfix_check
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-        
-          REPO="${{ github.repository }}"
-          GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
-          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
-  
-          IFS='.' read -ra VERSION <<< "$CURRENT_TAG"
-          MAJOR=${VERSION[0]#v}
-          MINOR=${VERSION[1]}
-          PATCH=${VERSION[2]}
-  
-          if [ "$PATCH" -gt 0 ]; then
-            PATCH=$((PATCH-1))
-            HOTFIX_TAG="v$MAJOR.$MINOR.$PATCH"
-  
-            TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
-  
-            if echo $TAGS | jq -e --arg tag "refs/tags/$HOTFIX_TAG" '.[] | select(.ref == $tag)' > /dev/null; then
-              echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
-            else
-              echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
-            fi
-          else
-            echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
-          fi 
-          
-      - name: If 'v' tag, compare version to staging version
-        if: ${{(startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='success')}}
-        run: |
-          if [ "$BASE_VERSION" != "$STAGING_TAG_VERSION" ]; then
-            echo "BASE_VERSION ($BASE_VERSION) does not match STAGING_TAG_VERSION ($STAGING_TAG_VERSION). Exiting workflow."
-            exit 1
-          else
-            echo "BASE_VERSION matches STAGING_TAG_VERSION. Continuing workflow."
-          fi
-        shell: bash
-
       - name: if no 'v' tag, add feeds
         if: ${{!startsWith(github.ref, 'refs/tags/v')}}  
         working-directory: ./src
@@ -155,7 +90,7 @@ jobs:
         working-directory: ./src
         if:  ${{ startsWith(github.ref, 'refs/tags/v')}}
         run: |
-           ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
+           ENV_VAR_CLEAN=$(echo ${{secrets.stagingRunNumber}} | tr -d "'")
            echo ENV_VAR_CLEAN=$(echo $ENV_VAR_CLEAN) >> $GITHUB_ENV
            
       - name: If 'v' tag, zip build results

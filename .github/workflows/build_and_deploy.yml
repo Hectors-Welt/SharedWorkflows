@@ -64,9 +64,10 @@ jobs:
         shell: bash
 
   check_for_staging_if_v_tag:
+    needs: check_if_hotfix
     runs-on: ubuntu-latest
     outputs:
-      STAGING_VERSION: ${{ steps.check_staging_tag.outputs.result }}
+      STAGING_RUN_NUMBER: ${{ steps.check_staging_tag.outputs.result }}
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -92,7 +93,7 @@ jobs:
             STAGING_TAG=$(git tag --list 'staging-*' --sort=-v:refname | head -n 1)
             STAGING_TAG_VERSION=${STAGING_TAG#staging-}
             echo "STAGING_TAG_VERSION=$STAGING_TAG_VERSION" >> $GITHUB_ENV
-            echo "::set-output name=result::$STAGING_TAG_VERSION"
+            echo "::set-output name=result::$STAGING_RUN_NUMBER"
           else
             echo "::set-output name=result::''"
             echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
@@ -271,8 +272,7 @@ jobs:
       dockerRepo: ${{ secrets.dockerRepo }}
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
-      isHotfix: ${{ needs.check_if_hotfix.outputs.HOTFIX_STATUS }}
-      stagingVersion: ${{ needs.check_for_staging_if_v_tag.outputs.STAGING_VERSION }}
+      stagingRunNumber: ${{ needs.check_for_staging_if_v_tag.outputs.STAGING_RUN_NUMBER }}
 
   node:
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
@@ -297,8 +297,7 @@ jobs:
       dockerRepo: ${{ secrets.dockerRepo }}
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
-      isHotfix: ${{ needs.check_if_hotfix.outputs.HOTFIX_STATUS }}
-      stagingVersion: ${{ needs.check_for_staging_if_v_tag.outputs.STAGING_VERSION }}
+      stagingRunNumber: ${{ needs.check_for_staging_if_v_tag.outputs.STAGING_RUN_NUMBER }}
 
         
 

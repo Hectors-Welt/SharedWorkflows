@@ -39,9 +39,7 @@ on:
         required: true
       dockerRepo:
         required: true 
-      isHotfix:
-        required: true
-      stagingVersion:
+      stagingRunNumber:
         required: true
 
 jobs:     
@@ -68,6 +66,7 @@ jobs:
         nexusAptRepoPrereleaseHost: ${{ secrets.nexusAptRepoPrereleaseHost }} 
         nexusAptRepoStagingHost: ${{ secrets.nexusAptRepoStagingHost }}
         nodeVersion:  ${{ needs.get_version.outputs.version }}
+        stagingRunNumber: ${{ secrets.stagingRunNumber }}
               
   build_zip_package:
     needs: [get_version]
@@ -80,4 +79,5 @@ jobs:
       nodeVersion:  ${{ needs.get_version.outputs.version }}
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
       nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
+      stagingRunNumber: ${{ secrets.stagingRunNumber }} 
 

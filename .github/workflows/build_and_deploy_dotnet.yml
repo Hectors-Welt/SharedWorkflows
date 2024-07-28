@@ -40,9 +40,7 @@ on:
         required: true
       dockerRepo:
         required: true 
-      isHotfix:
-        required: true
-      stagingVersion:
+      stagingRunNumber:
         required: true
 
 jobs:
@@ -52,19 +50,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Check if secrets match specific values
-      run: |
-        if [ "${{ secrets.stagingVersion }}" = "6.6.1" ]; then
-          echo "Staging Version matches expected value: true"
-        else
-          echo "Staging Version not matching expected value: false"
-        fi
-
-        if [ "${{ secrets.isHotfix }}" = "true" ]; then
-          echo "Is Hotfix matches expected value: true"
-        else
-          echo "Is Hotfix not matching expected value: false"
-        fi
   get_version: 
     runs-on: ubuntu-latest
     outputs:
@@ -119,6 +104,7 @@ jobs:
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
       dotnetVersion: ${{ needs.get_version.outputs.version }}
+      stagingRunNumber: ${{ secrets.stagingRunNumber }}
   
   build_and_publish_deb:
     needs: [get_version]
@@ -137,6 +123,7 @@ jobs:
       nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
       nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
       dotnetVersion: ${{ needs.get_version.outputs.version }}
+      stagingRunNumber: ${{ secrets.stagingRunNumber }}
 
   build_and_publish_zip:
     needs: [get_version]
@@ -154,4 +141,5 @@ jobs:
       nugetGithubUsername: ${{ secrets.nugetGithubUsername }}
       nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
       dotnetVersion: ${{ needs.get_version.outputs.version }}
+      stagingRunNumber: ${{ secrets.stagingRunNumber }}
  
