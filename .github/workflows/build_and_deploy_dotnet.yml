@@ -52,10 +52,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: test
+    - name: Check if secrets match specific values
       run: |
-        echo staging version ${{ secrets.stagingVersion }}
-        echo isHotfix ${{ secrets.isHotfix }}
+        if [ "${{ secrets.stagingVersion }}" = "6.6.0" ]; then
+          echo "Staging Version matches expected value: true"
+        else
+          echo "Staging Version matches expected value: false"
+        fi
+
+        if [ "${{ secrets.isHotfix }}" = "false" ]; then
+          echo "Is Hotfix matches expected value: true"
+        else
+          echo "Is Hotfix matches expected value: false"
+        fi
   get_version: 
     runs-on: ubuntu-latest
     outputs:
