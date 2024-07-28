@@ -54,13 +54,13 @@ jobs:
 
     - name: Check if secrets match specific values
       run: |
-        if [ "${{ secrets.stagingVersion }}" = "6.6.0" ]; then
+        if [ "${{ secrets.stagingVersion }}" = "6.6.1" ]; then
           echo "Staging Version matches expected value: true"
         else
           echo "Staging Version matches expected value: false"
         fi
 
-        if [ "${{ secrets.isHotfix }}" = "false" ]; then
+        if [ "${{ secrets.isHotfix }}" = "true" ]; then
           echo "Is Hotfix matches expected value: true"
         else
           echo "Is Hotfix matches expected value: false"
