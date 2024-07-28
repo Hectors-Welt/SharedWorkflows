@@ -104,7 +104,6 @@ jobs:
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
       dotnetVersion: ${{ needs.get_version.outputs.version }}
-      stagingRunNumber: ${{ secrets.stagingRunNumber }}
   
   build_and_publish_deb:
     needs: [get_version]

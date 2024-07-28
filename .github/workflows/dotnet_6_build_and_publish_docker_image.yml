@@ -23,7 +23,6 @@ on:
         required: true
       dotnetVersion:
         required: true
-
  
 env:
   SERVICE: ${{ github.event.repository.name }}
