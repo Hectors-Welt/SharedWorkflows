@@ -40,8 +40,22 @@ on:
         required: true
       dockerRepo:
         required: true 
-      
+      isHotfix:
+        required: true
+      stagingVersion:
+        required: true
+
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: test
+      run: |
+        echo staging version ${{ secrets.stagingVersion }}
+        echo isHotfix ${{ secrets.isHotfix }}
   get_version: 
     runs-on: ubuntu-latest
     outputs:

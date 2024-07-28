@@ -41,14 +41,82 @@ on:
         required: true                
 
 jobs:
-  check_if_commit_is_valid:
+  check_if_hotfix:
     runs-on: ubuntu-latest
+    outputs:
+      HOTFIX_STATUS: ${{ steps.check_hotfix.outputs.HOTFIX_STATUS }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Holt das gesamte Repository inklusive aller Tags
+
+      - name: Check if hotfix
+        id: check_hotfix
+        run: |
+          if git tag --list | grep -q '^hotfix-'; then
+            echo "HOTFIX_STATUS=true" >> $GITHUB_ENV
+            echo "::set-output name=HOTFIX_STATUS::true"
+          else
+            echo "HOTFIX_STATUS=false" >> $GITHUB_ENV
+            echo "::set-output name=HOTFIX_STATUS::false"
+          fi
+        shell: bash
+
+  check_for_staging_if_v_tag:
+    runs-on: ubuntu-latest
+    outputs:
+      STAGING_VERSION: ${{ steps.check_staging_tag.outputs.result }}
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
+      - name: If 'v' tag, check if staging tag exists and get run number
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: check_staging_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/})
+          TAG_VERSION=$(BASE_VERSION)
+          STAGING_TAG_NAME="staging-$TAG_VERSION"
+          REPO=${{ github.repository }}
+          API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
+          if [[ $API_RESPONSE == *"ref"* ]]; then
+            COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
+            RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$COMMIT_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
+            echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
+            echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
+            STAGING_TAG=$(git tag --list 'staging-*' --sort=-v:refname | head -n 1)
+            STAGING_TAG_VERSION=${STAGING_TAG#staging-}
+            echo "STAGING_TAG_VERSION=$STAGING_TAG_VERSION" >> $GITHUB_ENV
+            echo "::set-output name=result::$STAGING_TAG_VERSION"
+          else
+            echo "::set-output name=result::''"
+            echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
+          fi
+          
+      - name: If 'v' tag, compare version to staging version
+        if: ${{(startsWith(github.ref, 'refs/tags/v') && needs.check_if_hotfix.outputs.HOTFIX_STATUS =='true')}}
+        run: |
+          if [ "$BASE_VERSION" != "$STAGING_TAG_VERSION" ]; then
+            echo "BASE_VERSION ($BASE_VERSION) does not match STAGING_TAG_VERSION ($STAGING_TAG_VERSION). Exiting workflow."
+            exit 1
+          else
+            echo "BASE_VERSION matches STAGING_TAG_VERSION. Continuing workflow."
+          fi
+        shell: bash
+      
+  check_if_commit_is_valid:
+    needs: check_if_hotfix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Prepare version variables for prerelease
         if: startsWith(github.ref, 'refs/tags/prerelease-')
@@ -68,41 +136,9 @@ jobs:
           echo STAGING_VERSION=$(echo ${GITHUB_REF/refs\/tags\/staging-/}) >> $GITHUB_ENV
           echo CURRENT_COMMIT=$(git rev-parse HEAD) >> $GITHUB_ENV
           echo STAGING_COMMIT=$(git rev-list -n 1 staging-${{ env.VERSION }}) >> $GITHUB_ENV
-
-      - name: Check if hotfix
-        if: startsWith(github.ref, 'refs/tags/v')
-        id: hotfix_check
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-        
-          REPO="${{ github.repository }}"
-          GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
-          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
-  
-          IFS='.' read -ra VERSION <<< "$CURRENT_TAG"
-          MAJOR=${VERSION[0]#v}
-          MINOR=${VERSION[1]}
-          PATCH=${VERSION[2]}
-  
-          if [ "$PATCH" -gt 0 ]; then
-            PATCH=$((PATCH-1))
-            HOTFIX_TAG="v$MAJOR.$MINOR.$PATCH"
-  
-            TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
-  
-            if echo $TAGS | jq -e --arg tag "refs/tags/$HOTFIX_TAG" '.[] | select(.ref == $tag)' > /dev/null; then
-              echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
-            else
-              echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
-            fi
-          else
-            echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
-          fi
-         
           
       - name: Check for staging tag
-        if: ${{startsWith(github.ref, 'refs/tags/v') && env.HOTFIX_STATUS =='failure'}}
+        if: ${{startsWith(github.ref, 'refs/tags/v') && needs.check_if_hotfix.outputs.HOTFIX_STATUS =='false'}}
         id: staging_tag
         run: |
           if git rev-parse "staging-${{ env.VERSION }}" >/dev/null 2>&1; then
@@ -112,7 +148,7 @@ jobs:
           fi
 
       - name: Check for branch
-        if: ${{startsWith(github.ref, 'refs/tags/v')  && env.HOTFIX_STATUS =='failure'}}
+        if: ${{startsWith(github.ref, 'refs/tags/v')  && needs.check_if_hotfix.outputs.HOTFIX_STATUS =='false'}}}}
         id: branch
         run: |
           if git rev-parse --verify --quiet ${{env.STAGING_COMMIT}}; then
@@ -122,7 +158,7 @@ jobs:
           fi
           
       - name: Check previous commit for prerelease tag
-        if: ${{startsWith(github.ref, 'refs/tags/staging-') && env.HOTFIX_STATUS =='failure'}}
+        if: ${{startsWith(github.ref, 'refs/tags/staging-') && needs.check_if_hotfix.outputs.HOTFIX_STATUS =='false'}}}}
         id: check_tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -145,7 +181,7 @@ jobs:
 
   
       - name: Check for commit
-        if: ${{startsWith(github.ref, 'refs/tags/v')  && env.HOTFIX_STATUS =='failure'}}
+        if: ${{startsWith(github.ref, 'refs/tags/v')  && needs.check_if_hotfix.outputs.HOTFIX_STATUS =='false'}}
         id: commit
         run: |
           PREVIOUS_COMMIT=$(git rev-parse "${{ env.CURRENT_COMMIT }}^2")
@@ -180,7 +216,7 @@ jobs:
          fi  
 
       - name: Check versions
-        if: ${{(env.TAG_STATUS == 'failure' || env.STATUS == 'failure') && startsWith(github.ref, 'refs/tags/v')  && env.HOTFIX_STATUS =='failure'}}
+        if: ${{(env.TAG_STATUS == 'failure' || env.STATUS == 'failure') && startsWith(github.ref, 'refs/tags/v')  && needs.check_if_hotfix.outputs.HOTFIX_STATUS =='false'}}
         run: |
           if [ env.STATUS == 'failure' ]; then
             echo "There was no commit found with the same version and staging tag on this branch."
@@ -214,7 +250,7 @@ jobs:
           
   dotnet:
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_dotnet.yml@main
-    needs: [check_runtime]
+    needs: [check_runtime, check_if_hotfix]
     if: needs.check_runtime.outputs.runtime == 'dotnet'
     secrets:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
@@ -235,10 +271,12 @@ jobs:
       dockerRepo: ${{ secrets.dockerRepo }}
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
+      isHotfix: ${{ needs.check_if_hotfix.outputs.HOTFIX_STATUS }}
+      stagingVersion: ${{ needs.check_for_staging_if_v_tag.outputs.STAGING_VERSION }}
 
   node:
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
-    needs: [check_runtime]
+    needs: [check_runtime, check_if_hotfix]
     if: needs.check_runtime.outputs.runtime == 'node'
     secrets:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
@@ -259,5 +297,8 @@ jobs:
       dockerRepo: ${{ secrets.dockerRepo }}
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
+      isHotfix: ${{ needs.check_if_hotfix.outputs.HOTFIX_STATUS }}
+      stagingVersion: ${{ needs.check_for_staging_if_v_tag.outputs.STAGING_VERSION }}
+
         
 

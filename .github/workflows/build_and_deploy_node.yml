@@ -39,6 +39,9 @@ on:
         required: true
       dockerRepo:
         required: true 
+      isHotfix:
+        required: true
+
 jobs:     
   get_version: 
     runs-on: ubuntu-latest
