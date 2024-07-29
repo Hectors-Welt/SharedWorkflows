@@ -128,7 +128,7 @@ jobs:
   #     dotnetVersion: ${{ needs.get_version.outputs.version }}
       
   build_and_publish_docker:
-    if: ${{ success() && !startsWith(github.ref, 'refs/tags/staging-') && needs.set_build_docker_env.outputs.should_build_docker == 'true' }} 
+    if: ${{ success() && !startsWith(github.ref, 'refs/tags/staging-') && needs.set_build_docker_env.outputs.should_build_docker == true }} 
     needs: [get_version, set_build_docker_env]
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_docker_image.yml@main
     secrets:
@@ -145,7 +145,7 @@ jobs:
   
   build_and_publish_deb:
     needs: [get_version, set_build_docker_env]
-    if: ${{ success() && needs.set_build_docker_env.outputs.should_build_debian == 'true' }}
+    if: ${{ success() && needs.set_build_docker_env.outputs.should_build_debian == true }}
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_debian_package.yml@main
     secrets:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
@@ -164,7 +164,7 @@ jobs:
 
   build_and_publish_zip:
     needs: [get_version, set_build_docker_env]
-    if: ${{ success() && needs.set_build_docker_env.outputs.should_build_zip == 'true' }}
+    if: ${{ success() && needs.set_build_docker_env.outputs.should_build_zip == true }}
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_zip_package.yml@main
     secrets:
       packageRepoHost: ${{ secrets.packageRepoHost }}
