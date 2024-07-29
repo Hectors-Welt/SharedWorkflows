@@ -108,7 +108,8 @@ jobs:
           if [[ $API_RESPONSE == *"ref"* ]]; then
             COMMIT_SHA=$(echo $API_RESPONSE | jq -r '.object.sha')
             echo "commit sha $COMMIT_SHA"
-            STAGING_COMMIT_SHA=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/tags/$COMMIT_SHA)
+            STAGING_TAG_API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/tags/$COMMIT_SHA)
+            STAGING_COMMIT_SHA=$(echo $STAGING_TAG_API_RESPONSE | jq -r '.object.sha')
             echo "staging commit sha $STAGING_COMMIT_SHA"
             RUN_NUMBER=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/actions/runs | jq -r '[.workflow_runs[] | select(.head_sha == "'$STAGING_COMMIT_SHA'" and .conclusion == "success")] | max_by(.run_number) | .run_number')            
             echo "run number $RUN_NUMBER"
