@@ -110,6 +110,12 @@ jobs:
           echo "should_build_zip=false" >> $GITHUB_ENV
           echo "::set-output name=should_build_zip::false"
         fi  
+
+    - name: test
+      run: |
+        echo ${{ secrets.shouldBuildDocker }}
+        echo ${{ secrets.shouldBuildDebian }}
+        echo ${{ secrets.shouldBuildZip }}
  
   # run_tests:
   #   needs: [get_version]
