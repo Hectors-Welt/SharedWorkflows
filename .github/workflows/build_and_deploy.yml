@@ -38,7 +38,13 @@ on:
       packageRepoPort:
         required: true
       dockerRepo:
-        required: true                
+        required: true   
+      shouldBuildDocker:
+        required: false
+      shouldBuildDebian:
+        required: false
+      shouldBuildZip:
+        required: false
 
 jobs:
   check_if_hotfix:
@@ -297,7 +303,10 @@ jobs:
       dockerRepo: ${{ secrets.dockerRepo }}
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
-      stagingRunNumber: ${{ needs.check_for_staging_if_v_tag.outputs.STAGING_RUN_NUMBER }}
+      stagingRunNumber: ${{ needs.check_for_staging_if_v_tag.outputs.STAGING_RUN_NUMBER }}    
+      shouldBuildDocker: ${{ secrets.shouldBuildDocker }}
+      shouldBuildDebian: ${{ secrets.shouldBuildDebian }}
+      shouldBuildZip: ${{ secrets.shouldBuildZip }}
 
   node:
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
@@ -323,6 +332,9 @@ jobs:
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
       stagingRunNumber: ${{ needs.check_for_staging_if_v_tag.outputs.STAGING_RUN_NUMBER }}
+      shouldBuildDocker: ${{ secrets.shouldBuildDocker }}
+      shouldBuildDebian: ${{ secrets.shouldBuildDebian }}
+      shouldBuildZip: ${{ secrets.shouldBuildZip }}
 
         
 

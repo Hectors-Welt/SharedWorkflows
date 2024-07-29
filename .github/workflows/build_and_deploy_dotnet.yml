@@ -42,6 +42,12 @@ on:
         required: true 
       stagingRunNumber:
         required: true
+      shouldBuildDocker:
+        required: false
+      shouldBuildDebian:
+        required: false
+      shouldBuildZip:
+        required: false
 
 jobs:
   test:
@@ -73,6 +79,38 @@ jobs:
          echo "::set-output name=version::$(sed -n 's|<TargetFramework>\(.*\)</TargetFramework>|\1|p' *.csproj | sed 's/net//' | cut -d '.' -f 1 | tr -d '[:space:]')"
          echo $(sed -n 's|<TargetFramework>\(.*\)</TargetFramework>|\1|p' *.csproj | sed 's/net//' | cut -d '.' -f 1 | tr -d '[:space:]')---
 
+  set_build_docker_env:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build_docker: ${{ steps.set-env.outputs.should_build_docker }}
+      should_build_debian: ${{ steps.set-env.outputs.should_build_debian }}
+      should_build_zip: ${{ steps.set-env.outputs.should_build_zip }}
+    steps:
+    - name: Set shouldBuild environment variable
+      id: set-env
+      run: |
+        if [ -n "${{ secrets.shouldBuildDocker }}" ]; then
+          echo "should_build_docker=true" >> $GITHUB_ENV
+          echo "::set-output name=should_build_docker::true"
+        else
+          echo "should_build_docker=false" >> $GITHUB_ENV
+          echo "::set-output name=should_build_docker::false"
+        fi
+        if [ -n "${{ secrets.shouldBuildDebian }}" ]; then
+          echo "should_build_debian=true" >> $GITHUB_ENV
+          echo "::set-output name=should_build_debian::true"
+        else
+          echo "should_build_debian=false" >> $GITHUB_ENV
+          echo "::set-output name=should_build_debian::false"
+        fi    
+        if [ -n "${{ secrets.shouldBuildZip }}" ]; then
+          echo "should_build_zip=true" >> $GITHUB_ENV
+          echo "::set-output name=should_build_zip::true"
+        else
+          echo "should_build_zip=false" >> $GITHUB_ENV
+          echo "::set-output name=should_build_zip::false"
+        fi  
+ 
   # run_tests:
   #   needs: [get_version]
   #   uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_test.yml@main
@@ -90,8 +128,8 @@ jobs:
   #     dotnetVersion: ${{ needs.get_version.outputs.version }}
       
   build_and_publish_docker:
-    if: ${{ success() && !startsWith(github.ref, 'refs/tags/staging-') && needs.check_if_commit_is_valid.result == 'success' }} 
-    needs: [get_version]
+    if: ${{ success() && !startsWith(github.ref, 'refs/tags/staging-') && needs.set_build_docker_env.outputs.should_build_docker != '' }} 
+    needs: [get_version, set_build_docker_env]
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_docker_image.yml@main
     secrets:
       hangfireFeedUrl: ${{ secrets.hangfireFeedUrl }}
@@ -106,8 +144,8 @@ jobs:
       dotnetVersion: ${{ needs.get_version.outputs.version }}
   
   build_and_publish_deb:
-    needs: [get_version]
-    if: ${{ success() }}
+    needs: [get_version, set_build_docker_env]
+    if: ${{ success() && needs.set_build_docker_env.outputs.should_build_debian!= '' }}
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_debian_package.yml@main
     secrets:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
@@ -125,8 +163,8 @@ jobs:
       stagingRunNumber: ${{ secrets.stagingRunNumber }}
 
   build_and_publish_zip:
-    needs: [get_version]
-    if: ${{ success() }}
+    needs: [get_version, set_build_docker_env]
+    if: ${{ success() && needs.set_build_docker_env.outputs.should_build_zip != '' }}
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/dotnet_6_build_and_publish_zip_package.yml@main
     secrets:
       packageRepoHost: ${{ secrets.packageRepoHost }}

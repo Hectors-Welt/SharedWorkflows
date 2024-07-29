@@ -41,6 +41,12 @@ on:
         required: true 
       stagingRunNumber:
         required: true
+      shouldBuildDocker:
+        required: false
+      shouldBuildDebian:
+        required: false
+      shouldBuildZip:
+        required: false
 
 jobs:     
   get_version: 
@@ -55,9 +61,33 @@ jobs:
         id: node-version
         run: echo "::set-output name=version::$(jq -r '.devDependencies["@types/node"]'  package.json | cut -d '.' -f 1 | tr -d '[:space:]')"
   
+  set_build_docker_env:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build_debian: ${{ steps.set-env.outputs.should_build_debian }}
+      should_build_zip: ${{ steps.set-env.outputs.should_build_zip }}
+    steps:
+    - name: Set shouldBuild environment variable
+      id: set-env
+      run: |
+        if [ -n "${{ secrets.shouldBuildDebian }}" ]; then
+          echo "should_build_debian=true" >> $GITHUB_ENV
+          echo "::set-output name=should_build_debian::true"
+        else
+          echo "should_build_debian=false" >> $GITHUB_ENV
+          echo "::set-output name=should_build_debian::false"
+        fi    
+        if [ -n "${{ secrets.shouldBuildZip }}" ]; then
+          echo "should_build_zip=true" >> $GITHUB_ENV
+          echo "::set-output name=should_build_zip::true"
+        else
+          echo "should_build_zip=false" >> $GITHUB_ENV
+          echo "::set-output name=should_build_zip::false"
+        fi  
         
   build_debian_package:
-      needs: [get_version]
+      needs: [get_version, set_build_docker_env]
+      if: ${{ needs.set_build_docker_env.outputs.should_build_debian != '' }}
       uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_18_build_debian_package.yml@main
       secrets:
         nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
@@ -69,7 +99,8 @@ jobs:
         stagingRunNumber: ${{ secrets.stagingRunNumber }}
               
   build_zip_package:
-    needs: [get_version]
+    needs: [get_version, set_build_docker_env]
+    if: ${{ needs.set_build_docker_env.outputs.should_build_zip != '' }}
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_zip.yml@main
     secrets:
       packageRepoHost: ${{ secrets.packageRepoHost }}
