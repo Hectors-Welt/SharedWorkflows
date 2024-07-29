@@ -41,11 +41,11 @@ on:
         required: true 
       stagingRunNumber:
         required: true
-      shouldBuildDocker:
+      shouldSkipDocker:
         required: false
-      shouldBuildDebian:
+      shouldSkipDebian:
         required: false
-      shouldBuildZip:
+      shouldSkipZip:
         required: false
 
 jobs:     
@@ -61,33 +61,41 @@ jobs:
         id: node-version
         run: echo "::set-output name=version::$(jq -r '.devDependencies["@types/node"]'  package.json | cut -d '.' -f 1 | tr -d '[:space:]')"
   
-  set_build_docker_env:
+  set_skip_docker_env:
     runs-on: ubuntu-latest
     outputs:
-      should_build_debian: ${{ steps.set-env.outputs.should_build_debian }}
-      should_build_zip: ${{ steps.set-env.outputs.should_build_zip }}
+      should_skip_docker: ${{ steps.set-env.outputs.should_skip_docker }}
+      should_skip_debian: ${{ steps.set-env.outputs.should_skip_debian }}
+      should_skip_zip: ${{ steps.set-env.outputs.should_skip_zip }}
     steps:
-    - name: Set shouldBuild environment variable
+    - name: Set shouldskip environment variable
       id: set-env
       run: |
-        if [ -n "${{ secrets.shouldBuildDebian }}" ]; then
-          echo "should_build_debian=true" >> $GITHUB_ENV
-          echo "::set-output name=should_build_debian::true"
+        if [ -n "${{ secrets.shouldSkipDocker }}" ]; then
+          echo "should_skip_docker=true" >> $GITHUB_ENV
+          echo "::set-output name=should_skip_docker::true"
         else
-          echo "should_build_debian=false" >> $GITHUB_ENV
-          echo "::set-output name=should_build_debian::false"
+          echo "should_skip_docker=false" >> $GITHUB_ENV
+          echo "::set-output name=should_skip_docker::false"
+        fi
+        if [ -n "${{ secrets.shouldSkipDebian }}" ]; then
+          echo "should_skip_debian=true" >> $GITHUB_ENV
+          echo "::set-output name=should_skip_debian::true"
+        else
+          echo "should_skip_debian=false" >> $GITHUB_ENV
+          echo "::set-output name=should_skip_debian::false"
         fi    
-        if [ -n "${{ secrets.shouldBuildZip }}" ]; then
-          echo "should_build_zip=true" >> $GITHUB_ENV
-          echo "::set-output name=should_build_zip::true"
+        if [ -n "${{ secrets.shouldSkipZip }}" ]; then
+          echo "should_skip_zip=true" >> $GITHUB_ENV
+          echo "::set-output name=should_skip_zip::true"
         else
-          echo "should_build_zip=false" >> $GITHUB_ENV
-          echo "::set-output name=should_build_zip::false"
+          echo "should_skip_zip=false" >> $GITHUB_ENV
+          echo "::set-output name=should_skip_zip::false"
         fi  
         
   build_debian_package:
-      needs: [get_version, set_build_docker_env]
-      if: ${{ needs.set_build_docker_env.outputs.should_build_debian != '' }}
+      needs: [get_version, set_skip_docker_env]
+      if: ${{ needs.set_skip_docker_env.outputs.should_skip_debian != '' }}
       uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_18_build_debian_package.yml@main
       secrets:
         nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
@@ -99,8 +107,8 @@ jobs:
         stagingRunNumber: ${{ secrets.stagingRunNumber }}
               
   build_zip_package:
-    needs: [get_version, set_build_docker_env]
-    if: ${{ needs.set_build_docker_env.outputs.should_build_zip != '' }}
+    needs: [get_version, set_skip_docker_env]
+    if: ${{ needs.set_skip_docker_env.outputs.should_skip_zip != '' }}
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_zip.yml@main
     secrets:
       packageRepoHost: ${{ secrets.packageRepoHost }}

@@ -39,11 +39,11 @@ on:
         required: true
       dockerRepo:
         required: true   
-      shouldBuildDocker:
+      shouldSkipDocker:
         required: false
-      shouldBuildDebian:
+      shouldSkipDebian:
         required: false
-      shouldBuildZip:
+      shouldSkipZip:
         required: false
 
 jobs:
@@ -332,9 +332,9 @@ jobs:
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
       stagingRunNumber: ${{ needs.check_for_staging_if_v_tag.outputs.STAGING_RUN_NUMBER }}
-      shouldBuildDocker: ${{ secrets.shouldBuildDocker }}
-      shouldBuildDebian: ${{ secrets.shouldBuildDebian }}
-      shouldBuildZip: ${{ secrets.shouldBuildZip }}
+      shouldSkipDocker: ${{ secrets.shouldSkipDocker }}
+      shouldSkipDebian: ${{ secrets.shouldSkipDebian }}
+      shouldSkipZip: ${{ secrets.shouldSkipZip }}
 
         
 
