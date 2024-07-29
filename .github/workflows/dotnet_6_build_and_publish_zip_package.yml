@@ -85,16 +85,6 @@ jobs:
         working-directory: ./src
         if: ${{!startsWith(github.ref, 'refs/tags/v')}}  
         run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .
-
-      - name: If 'v' tag, set run number as env variable
-        env:
-          STAGING_RUN_NUMBER: ${{ secrets.stagingRunNumber }}
-        working-directory: ./src
-        if:  ${{ startsWith(github.ref, 'refs/tags/v')}}
-        run: |
-           echo ${{env.STAGING_RUN_NUMBER}}
-           ENV_VAR_CLEAN=$(echo ${{env.STAGING_RUN_NUMBER}} | tr -d "'")
-           echo ENV_VAR_CLEAN=$(echo $ENV_VAR_CLEAN) >> $GITHUB_ENV
            
       - name: If 'v' tag, zip build results
         working-directory: ./src
