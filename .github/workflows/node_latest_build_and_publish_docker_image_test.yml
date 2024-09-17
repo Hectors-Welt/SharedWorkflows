@@ -61,29 +61,33 @@ jobs:
       run: | 
         cat <<EOF >Dockerfile
         FROM node:lts-alpine As development
-
-        ENV NODE_ENV=development
+        
+        ENV NODE_ENV=production
         WORKDIR /usr/src/app
+        
         COPY package*.json ./
-        ARG packageRegistryToken
-        RUN echo "//npm.pkg.github.com/:_authToken=${packageRegistryToken}" >> ~/.npmrc
-        RUN echo "@hectors-welt:registry=https://npm.pkg.github.com" >> ~/.npmrc
-        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --omit=production --legacy-peer-deps
+        
+        RUN echo //npm.pkg.github.com/:_authToken=${{ secrets.packageRegistryToken }} >> ~/.npmrc
+        RUN echo @hectors-welt:registry=https://npm.pkg.github.com >> ~/.npmrc
+        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=production --legacy-peer-deps 
+                
         RUN echo > ~/.npmrc
+        
+        ADD . /usr/src/app
+        
         COPY . .
         RUN npm run build
         
-        FROM node:lts-alpine As production
+        FROM node:lts-alpine as production
         
         ENV NODE_ENV=production
         WORKDIR /usr/src/app
         COPY package*.json ./
-        ARG packageRegistryToken
-        RUN echo "//npm.pkg.github.com/:_authToken=${packageRegistryToken}" >> ~/.npmrc
-        RUN echo "@hectors-welt:registry=https://npm.pkg.github.com" >> ~/.npmrc
-        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --omit=production --legacy-peer-deps
-        RUN npm install -g redoc-cli
-        RUN echo > ~/.npmrc
+        RUN echo //npm.pkg.github.com/:_authToken=${{ secrets.packageRegistryToken }} >> ~/.npmrc
+        RUN echo @hectors-welt:registry=https://npm.pkg.github.com >> ~/.npmrc
+        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=production --legacy-peer-deps 
+        RUN npm i -g redoc-cli
+        COPY . .
         COPY --from=development /usr/src/app/dist ./dist
         
         CMD ["node", "dist/src/main"]
