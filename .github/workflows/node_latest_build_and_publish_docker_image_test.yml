@@ -68,7 +68,7 @@ jobs:
         ARG packageRegistryToken
         RUN echo "//npm.pkg.github.com/:_authToken=${packageRegistryToken}" >> ~/.npmrc
         RUN echo "@hectors-welt:registry=https://npm.pkg.github.com" >> ~/.npmrc
-        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --legacy-peer-deps
+        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --omit=production --legacy-peer-deps
         RUN echo > ~/.npmrc
         COPY . .
         RUN npm run build
@@ -81,9 +81,9 @@ jobs:
         ARG packageRegistryToken
         RUN echo "//npm.pkg.github.com/:_authToken=${packageRegistryToken}" >> ~/.npmrc
         RUN echo "@hectors-welt:registry=https://npm.pkg.github.com" >> ~/.npmrc
-        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --omit=dev --legacy-peer-deps
-        RUN echo > ~/.npmrc
+        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --omit=production --legacy-peer-deps
         RUN npm install -g redoc-cli
+        RUN echo > ~/.npmrc
         COPY --from=development /usr/src/app/dist ./dist
         
         CMD ["node", "dist/src/main"]
