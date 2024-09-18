@@ -1,0 +1,98 @@
+name: Create prerelease of node 20
+
+on:
+  workflow_call:
+    secrets:
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
+      nexusAptRepoHost:
+        required: true
+      packageRepoHost:
+        required: true
+      packageRepoUsername:
+        required: true
+      packageRepoPassword:
+        required: true
+      packageRepoPort:
+        required: true
+        
+jobs:
+  build_zip:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '20'
+
+    - name: Prepare environemt variables
+      run: |
+        chcp 65001 #set code page to utf-8
+        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $env:GITHUB_ENV
+        echo VERSION=$($env:GITHUB_REF -replace "refs/tags/prerelease-")  >> $env:GITHUB_ENV
+        echo RUN_NUMBER=$(echo ${{github.run_number}}) >> $env:GITHUB_ENV
+        echo TAG_NAME=$(echo ${{github.ref_name}}) >> $env:GITHUB_ENV
+        echo NAME=$(echo MitarbeiterAppService) >> $env:GITHUB_ENV
+       
+    - name: get version
+      id: version
+      uses: notiz-dev/github-action-json-property@release
+      with: 
+          path: 'package.json'
+          prop_path: 'serviceVersion'
+          
+    - name: check version    
+      run: echo ${{steps.version.outputs.prop}}  
+    
+    - name: Build service
+      run: |
+        npm install
+        (Get-Content package.json) -replace '${{steps.version.outputs.prop}}','${{env.VERSION}}.${{env.RUN_NUMBER}}' | Set-Content package.json
+        npm run build
+        npm run package
+
+    - name: Zip build results
+      working-directory: ./build
+      run: Compress-Archive -Path ./*  -DestinationPath ./${{env.NAME}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
+   
+    - name: Upload zip
+      uses: actions/upload-artifact@v3
+      with:
+        name: project-zip
+        path: build/${{env.NAME}}-${{env.VERSION}}.${{env.RUN_NUMBER}}.zip
+        retention-days: 1
+  publish_zip:
+    needs: build_zip
+    runs-on: ubuntu-latest
+  
+    steps:
+    - name: Download a single artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: project-zip
+        
+    - name: Prepare environemt variables
+      run: |
+        echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
+        echo VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}.$GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+        echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
+        echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
+        echo NAME=$(echo MitarbeiterAppService) >> $GITHUB_ENV
+        
+    - name: copy file via ssh password
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.packageRepoHost }}
+        username: ${{ secrets.packageRepoUsername }}
+        password: ${{ secrets.PackageRepoPassword }}
+        port: ${{ secrets.packageRepoPort}}
+        source: ${{ env.NAME }}-${{ env.VERSION }}.zip
+        target: prerelease/${{ env.NAME }}
+        timeout: 300s
+        command_timeout: 30m
