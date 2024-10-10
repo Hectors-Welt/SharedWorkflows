@@ -61,7 +61,7 @@ jobs:
       run: | 
         cat <<EOF >Dockerfile
         FROM node:lts-alpine As development
-        
+
         ENV NODE_ENV=production
         WORKDIR /usr/src/app
         
@@ -69,8 +69,8 @@ jobs:
         
         RUN echo //npm.pkg.github.com/:_authToken=${{ secrets.packageRegistryToken }} >> ~/.npmrc
         RUN echo @hectors-welt:registry=https://npm.pkg.github.com >> ~/.npmrc
-        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=production --legacy-peer-deps 
-                
+        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --omit=production --legacy-peer-deps
+        
         RUN echo > ~/.npmrc
         
         ADD . /usr/src/app
@@ -82,17 +82,19 @@ jobs:
         
         ENV NODE_ENV=production
         WORKDIR /usr/src/app
+        
         COPY package*.json ./
+        
         RUN echo //npm.pkg.github.com/:_authToken=${{ secrets.packageRegistryToken }} >> ~/.npmrc
         RUN echo @hectors-welt:registry=https://npm.pkg.github.com >> ~/.npmrc
-        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci -omit=production --legacy-peer-deps 
+        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --omit=production --legacy-peer-deps
         RUN npm i -g redoc-cli
-        RUN apt-get install jq
+        RUN apk --no-cache add jq
+        
         COPY . .
         COPY --from=development /usr/src/app/dist ./dist
         
         CMD ["node", "dist/src/main"]
-
         EOF
 
     - name: Extract metadata (tags, labels) for Docker
