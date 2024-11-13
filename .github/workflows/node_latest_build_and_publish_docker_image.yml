@@ -122,7 +122,7 @@ jobs:
 
     - name: Pull Docker image from Nexus
       if: startsWith(github.ref, 'refs/tags/v')
-      run: docker pull ${{ secrets.dockerRepo }}/${{ secrets.dockerRepo }}/${{env.SERVICE}}:staging
+      run: docker pull ${{ secrets.dockerRepo }}/${{env.SERVICE}}:staging
 
     - name: Tag Docker image with new tag
       if: startsWith(github.ref, 'refs/tags/v')
