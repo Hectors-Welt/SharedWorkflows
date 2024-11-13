@@ -119,11 +119,11 @@ jobs:
 
     - name: Pull Docker image from Nexus
       if: startsWith(github.ref, 'refs/tags/v')
-      run: docker pull http://nexus.hectorts.de/repository/docker/${{env.SERVICE}}:staging
+      run: docker pull ${{env.SERVICE}}:staging
 
     - name: Tag Docker image with new tag
       if: startsWith(github.ref, 'refs/tags/v')
-      run: docker tag ${{ secrets.NEXUS_URL }}/${{env.SERVICE}}:staging ${{env.SERVICE}}:release
+      run: docker tag ${{env.SERVICE}}:staging ${{env.SERVICE}}:release
 
     - name: Push Docker image to Docker Hub
       if: startsWith(github.ref, 'refs/tags/v')
