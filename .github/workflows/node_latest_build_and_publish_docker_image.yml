@@ -117,6 +117,9 @@ jobs:
         INPUT=${{ env.SERVICE }}
         echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT  
 
+    - name: Log in to Nexus Repository
+      run: echo "${{ secrets.nexusDockerPassword }}" | docker login -u "${{ secrets.nexusDockerUsername }}" ${{ secrets.dockerRepo }} --password-stdin
+
     - name: Pull Docker image from Nexus
       if: startsWith(github.ref, 'refs/tags/v')
       run: docker pull ${{env.SERVICE}}:staging
