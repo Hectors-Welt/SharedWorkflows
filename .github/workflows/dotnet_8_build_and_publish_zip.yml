@@ -1,3 +1,4 @@
+
 name: Create v8 publish zip
 
 on:
@@ -23,27 +24,24 @@ on:
         required: true
       nugetGithubPassword:
         required: true
- 
+
 env:
   SERVICE: ${{ github.event.repository.name }}
         
 jobs:
    build_and_publish_zip:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./src
     
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
 
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 8.0.201
-
-      - name: Prepare environment variables
+          dotnet-version: 8.x
+          
+      - name: Prepare environment variables for release
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
@@ -51,7 +49,7 @@ jobs:
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
 
-      - name: Prepare environment variables
+      - name: Prepare environment variables for prerelease
         if: startsWith(github.ref, 'refs/tags/prerelease-')
         run: |
           echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/prerelease-/}) >> $GITHUB_ENV
@@ -59,45 +57,52 @@ jobs:
           echo RUN_NUMBER=$(echo $GITHUB_RUN_NUMBER) >> $GITHUB_ENV
           echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
-          
-      - name: add feeds
+
+      - name: if no 'v' tag, add feeds
+        if: ${{!startsWith(github.ref, 'refs/tags/v')}}  
+        working-directory: ./src
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
           dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
           dotnet restore
       
-      - name: Build
+      - name: If no 'v' tag, build service
+        working-directory: ./src
+        if: ${{!startsWith(github.ref, 'refs/tags/v')}}  
         run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
      
-      - name: Zip build results
+      - name: If no 'v' tag, zip build results
+        working-directory: ./src
+        if: ${{!startsWith(github.ref, 'refs/tags/v')}}  
         run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .
+           
+      - name: If 'v' tag, zip build results
+        working-directory: ./src
+        if:  ${{ startsWith(github.ref, 'refs/tags/v')}}
+        run: |
+           curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/staging/${{env.NAME}}/${{env.NAME}}-${{ env.VERSION }}.zip --output ${{env.NAME}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip
 
       - name: Publish zip to nexus release repo
-        if: startsWith(github.ref, 'refs/tags/v')
-        run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows/${{ env.NAME}}-${{ env.VERSION }}.zip
-
-      - name: Publish zip to nexus staging repo
-        if: startsWith(github.ref, 'refs/tags/staging-')
-        run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows-stg/${{ env.NAME}}-${{ env.VERSION }}.zip
-
+        if:   ${{ startsWith(github.ref, 'refs/tags/v')}}
+        run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ./src/${{env.NAME}}-${{ env.VERSIOn }}.zip https://nexus.hectorts.de/repository/windows/${{ env.NAME}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip
 
       - name: Publish zip to nexus prerelease repo
         if: startsWith(github.ref, 'refs/tags/prerelease-')
         run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows-pre/${{ env.NAME}}-${{ env.VERSION }}.zip
 
-      - name: copy file via ssh password
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: copy file via ssh password to release repo
+        if:   ${{ startsWith(github.ref, 'refs/tags/v')}}
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.packageRepoHost }}
           username: ${{ secrets.packageRepoUsername }}
           password: ${{ secrets.packageRepoPassword }}
           port: ${{ secrets.packageRepoPort }}
-          source: ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip
+          source: ./src/${{ env.NAME}}-${{ env.VERSION }}.zip
           target: release/${{ env.NAME }}
-          strip_components: 3
-  
-      - name: copy file via ssh password
+          strip_components: 2
+          
+      - name: copy file via ssh password to prerelease repo
         if: startsWith(github.ref, 'refs/tags/prerelease-')
         uses: appleboy/scp-action@master
         with:
