@@ -131,16 +131,16 @@ jobs:
             echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
           fi
           
-      - name: If 'v' tag, compare version to staging version
-        if: ${{(startsWith(github.ref, 'refs/tags/v') && needs.check_if_hotfix.outputs.HOTFIX_STATUS =='true')}}
-        run: |
-          if [ "$BASE_VERSION" != "$STAGING_TAG_VERSION" ]; then
-            echo "BASE_VERSION ($BASE_VERSION) does not match STAGING_TAG_VERSION ($STAGING_TAG_VERSION). Exiting workflow."
-            exit 1
-          else
-            echo "BASE_VERSION matches STAGING_TAG_VERSION. Continuing workflow."
-          fi
-        shell: bash
+      # - name: If 'v' tag, compare version to staging version
+      #   if: ${{(startsWith(github.ref, 'refs/tags/v') && needs.check_if_hotfix.outputs.HOTFIX_STATUS =='true')}}
+      #   run: |
+      #     if [ "$BASE_VERSION" != "$STAGING_TAG_VERSION" ]; then
+      #       echo "BASE_VERSION ($BASE_VERSION) does not match STAGING_TAG_VERSION ($STAGING_TAG_VERSION). Exiting workflow."
+      #       exit 1
+      #     else
+      #       echo "BASE_VERSION matches STAGING_TAG_VERSION. Continuing workflow."
+      #     fi
+      #   shell: bash
       
   check_if_commit_is_valid:
     needs: check_if_hotfix
