@@ -94,7 +94,7 @@ jobs:
            
       - name: If 'v' tag, zip build results
         working-directory: ./src
-        if: ${{(!startsWith(github.ref, 'refs/tags/v') ||( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true'))}}
+        if: ${{(startsWith(github.ref, 'refs/tags/v')  && env.IS_HOTFIX == 'false')}}
         run: |
            curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/staging/${{env.NAME}}/${{env.NAME}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip --output ${{env.NAME}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip
 
@@ -142,7 +142,7 @@ jobs:
           username: ${{ secrets.packageRepoUsername }}
           password: ${{ secrets.packageRepoPassword }}
           port: ${{ secrets.packageRepoPort }}
-          source: ./src/publish/${{ env.NAME}}-${{ env.VERSION }}.zip
+          source: ./src/publish/${{ env.NAME }}-${{ env.VERSION }}.zip
           target: release/${{ env.NAME }}
           strip_components: 3
 
