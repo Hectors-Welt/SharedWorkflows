@@ -308,6 +308,7 @@ jobs:
       shouldSkipDocker: ${{ secrets.shouldSkipDocker }}
       shouldSkipDebian: ${{ secrets.shouldSkipDebian }}
       shouldSkipZip: ${{ secrets.shouldSkipZip }}
+      isHotfix: ${{ needs.check_if_hotfix.outputs.HOTFIX_STATUS }}
 
   node:
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/build_and_deploy_node.yml@main
@@ -336,6 +337,8 @@ jobs:
       shouldSkipDocker: ${{ secrets.shouldSkipDocker }}
       shouldSkipDebian: ${{ secrets.shouldSkipDebian }}
       shouldSkipZip: ${{ secrets.shouldSkipZip }}
+      isHotfix: ${{ needs.check_if_hotfix.outputs.HOTFIX_STATUS }}
+
 
         
 
