@@ -94,13 +94,17 @@ jobs:
            
       - name: If 'v' tag, zip build results
         working-directory: ./src
-        if: ${{(startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'false')}}
+        if: ${{(!startsWith(github.ref, 'refs/tags/v') ||( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true'))}}
         run: |
            curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/staging/${{env.NAME}}/${{env.NAME}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip --output ${{env.NAME}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip
 
       - name: Publish zip to nexus release repo
-        if:   ${{ startsWith(github.ref, 'refs/tags/v')}}
+        if:   ${{ startsWith(github.ref, 'refs/tags/v')  && env.IS_HOTFIX == 'false'}}
         run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ./src/${{env.NAME}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip https://nexus.hectorts.de/repository/windows/${{ env.NAME}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip
+
+      - name: Publish zip to nexus release repo hotfix
+        if:   ${{ startsWith(github.ref, 'refs/tags/v')  && env.IS_HOTFIX == 'true'}}
+        run:  curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows/${{ env.NAME}}-${{ env.VERSION }}.zip
 
       - name: Publish zip to nexus prerelease repo
         if: startsWith(github.ref, 'refs/tags/prerelease-')
