@@ -17,6 +17,9 @@ on:
         required: true
       stagingRunNumber:
         required: true
+      isHotfix:
+        required: false
+
 env:
   SERVICE: ${{ github.event.repository.name }}
 
@@ -31,6 +34,9 @@ jobs:
       with: 
         fetch-depth: 0
         
+    - name: Set isHotfix environment variable
+      run: echo "IS_HOTFIX=${{ secrets.isHotfix }}" >> $GITHUB_ENV
+      
     - name: Setup Node.js
       if: ${{ env.NODE_VERSION  != null  &&  env.NODE_VERSION != '' }}
       uses: actions/setup-node@v2
@@ -59,7 +65,7 @@ jobs:
         echo TAG_NAME=$(echo ${GITHUB_REF/refs\/tags\/}) >> $GITHUB_ENV
 
     - name: If no 'v' tag, build service 
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+      if:  ${{ !startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true') }}
       run: |
         sed -i '/serviceVersion/c\"serviceVersion": "${{env.VERSION}}",' ./package.json
         PUPPETEER_SKIP_DOWNLOAD=true npm i --force
@@ -70,13 +76,13 @@ jobs:
 
 
     - name: If no 'v' tag, create unit file path
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+      if:  ${{ !startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true') }}
       run: |
         mkdir -p Publish/etc/systemd/system/
         mkdir Publish/DEBIAN
     
     - name: If no 'v' tag, Build unit file & startup script
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+      if:  ${{ !startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true') }}
       run: |
         startup=Publish/opt/hector/${{ env.SERVICE }}/start.sh
         cat > $startup <<EOF
@@ -108,7 +114,7 @@ jobs:
         EOF
 
     - name: If no 'v' tag, Create postinstall script
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+      if:  ${{ !startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true') }}
       run: |
         cat << EOF > Publish/DEBIAN/postinst
         #!/bin/sh
@@ -117,7 +123,7 @@ jobs:
         chmod 755 Publish/DEBIAN/postinst
 
     - name: If no 'v' tag, create preremove script
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+      if:  ${{ !startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true') }}
       run: |
         cat << EOF > Publish/DEBIAN/prerm
         #!/bin/sh
@@ -126,7 +132,7 @@ jobs:
         chmod 755 Publish/DEBIAN/prerm
 
     - name: If no 'v' tag, build-deb-action
-      if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+      if:  ${{ !startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true') }}
       id: package
       uses: jiro4989/build-deb-action@v2
       with:
@@ -137,9 +143,8 @@ jobs:
         arch: "amd64"
         desc: Hector ${{ env.SERVICE }}
 
-
     - name: If 'v' tag, get package binarys from staging repo
-      if:  ${{ startsWith(github.ref, 'refs/tags/v')}}
+      if:  ${{ (startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'false') }}
       id: debian_package
       run: |
         FIRST_CHAR=`echo ${{env.SERVICE}} | cut -c1-1`
@@ -147,12 +152,17 @@ jobs:
         curl --fail ${{ secrets.nexusAptRepoStagingHost }}pool/${FIRST_CHAR}/${{env.SERVICE}}/${{env.SERVICE}}_${{env.BASE_VERSION}}.${{secrets.stagingRunNumber}}_amd64.deb --output ${{env.SERVICE}}_${{env.BASE_VERSION}}.${{secrets.stagingRunNumber}}_amd64.deb 
   
     - name: If 'v' tag, push deb package to nexus release apt repo 
-      if: ${{ startsWith(github.ref, 'refs/tags/v')}}
+      if: ${{ (startsWith(github.ref, 'refs/tags/v')  && env.IS_HOTFIX == 'false')}}
       run: |
         ENV_VAR_CLEAN=$(echo ${{secrets.stagingRunNumber}} | tr -d "'")
         echo $ENV_VAR_CLEAN
         curl --fail -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{env.SERVICE}}_${{env.BASE_VERSION}}.${ENV_VAR_CLEAN}_amd64.deb" "${{ secrets.nexusAptRepoHost }}"
     
+    - name: hotfix, push deb package to nexus apt repo
+      if: ${{ (startsWith(github.ref, 'refs/tags/v')  && env.IS_HOTFIX == 'true')}}
+      run: |
+          curl --fail -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" -H "Content-Type: multipart/form-data" --data-binary "@${{steps.package.outputs.file_name}}" "${{ secrets.nexusAptRepoHost  }}"
+
     - name: staging, push deb package to nexus apt repo
       if: startsWith(github.ref, 'refs/tags/staging-')
       run: |

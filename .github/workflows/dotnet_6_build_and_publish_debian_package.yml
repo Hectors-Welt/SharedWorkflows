@@ -29,6 +29,8 @@ on:
         required: true
       stagingRunNumber:
         required: true
+      isHotfix:
+        required: false
 env:
   SERVICE: ${{ github.event.repository.name }}
         
@@ -46,7 +48,10 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ secrets.dotnetVersion }}.x
-          
+
+      - name: Set isHotfix environment variable
+        run: echo "IS_HOTFIX=${{ secrets.isHotfix }}" >> $GITHUB_ENV
+
       - name: Prepare environment variables for release
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -73,26 +78,26 @@ jobs:
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
         
       - name: If no 'v' tag, add feeds
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
           dotnet nuget add source ${{ secrets.hangfireFeedUrl }} --name hangfirePro --username ${{ secrets.hangfireUsername }} --password ${{ secrets.hangfirePassword }} --store-password-in-clear-text
           dotnet restore
 
       - name: If no 'v' tag, publish service
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         run: >
           dotnet publish ./src/${{ env.NAME }}.csproj --configuration Release --output Publish/opt/hector/${{ env.NAME }}
           -r linux-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}
           
       - name: If no 'v' tag, create file paths
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         run: |
           mkdir -p Publish/etc/systemd/system/
           mkdir Publish/DEBIAN
           
       - name: If no 'v' tag, create systemd unit
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         run: |
           cat << EOF > Publish/etc/systemd/system/${{ env.NAME }}.service
           [Unit]
@@ -113,7 +118,7 @@ jobs:
           EOF
           
       - name: If no 'v' tag, create postinstall script
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         run: |
           cat << EOF > Publish/DEBIAN/postinst
           #!/bin/sh
@@ -122,7 +127,7 @@ jobs:
           chmod 755 Publish/DEBIAN/postinst
           
       - name: If no 'v' tag, create preremove script
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         run: |
           cat << EOF > Publish/DEBIAN/prerm
           #!/bin/sh
@@ -131,12 +136,12 @@ jobs:
           chmod 755 Publish/DEBIAN/prerm
           
       - name: If no 'v' tag, set user and group to root
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         run: |
           sudo chown -R root:root Publish
           
       - name: If no 'v' tag, build deb package
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         id: package
         uses: jiro4989/build-deb-action@v2
         with:

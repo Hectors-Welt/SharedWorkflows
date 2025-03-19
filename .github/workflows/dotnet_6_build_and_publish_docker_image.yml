@@ -23,7 +23,9 @@ on:
         required: true
       dotnetVersion:
         required: true
- 
+      isHotfix:
+        required: false
+        
 env:
   SERVICE: ${{ github.event.repository.name }}
   REGISTRY: ${{ secrets.dockerRepo }}

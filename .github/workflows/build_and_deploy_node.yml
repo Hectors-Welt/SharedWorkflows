@@ -47,6 +47,8 @@ on:
         required: false
       shouldSkipZip:
         required: false
+      isHotfix:
+        required: false
 
 jobs:     
   get_version: 
@@ -105,6 +107,7 @@ jobs:
         nexusAptRepoStagingHost: ${{ secrets.nexusAptRepoStagingHost }}
         nodeVersion:  ${{ needs.get_version.outputs.version }}
         stagingRunNumber: ${{ secrets.stagingRunNumber }}
+        isHotfix: ${{ secrets.isHotfix }}
               
   build_zip_package:
     needs: [get_version, set_skip_docker_env]
@@ -119,4 +122,5 @@ jobs:
       nexusAptRepoUsername: ${{ secrets.nexusAptRepoUsername }}
       nexusAptRepoPassword: ${{ secrets.nexusAptRepoPassword }}
       stagingRunNumber: ${{ secrets.stagingRunNumber }} 
+      isHotfix: ${{ secrets.isHotfix }}
 

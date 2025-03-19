@@ -48,6 +48,8 @@ on:
         required: false
       shouldSkipZip:
         required: false
+      isHotfix:
+        required: false
 
 jobs:
   get_version: 
@@ -136,6 +138,7 @@ jobs:
       nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
       nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
       dotnetVersion: ${{ needs.get_version.outputs.version }}
+      isHotfix: ${{ secrets.isHotfix }}
   
   build_and_publish_deb:
     needs: [get_version, set_skip_docker_env]
@@ -155,6 +158,7 @@ jobs:
       nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
       dotnetVersion: ${{ needs.get_version.outputs.version }}
       stagingRunNumber: ${{ secrets.stagingRunNumber }}
+      isHotfix: ${{ secrets.isHotfix }}
 
   build_and_publish_zip:
     needs: [get_version, set_skip_docker_env]
@@ -173,4 +177,4 @@ jobs:
       nugetGithubPassword: ${{ secrets.nugetGithubPassword }}
       dotnetVersion: ${{ needs.get_version.outputs.version }}
       stagingRunNumber: ${{ secrets.stagingRunNumber }}
- 
+      isHotfix: ${{ secrets.isHotfix }}

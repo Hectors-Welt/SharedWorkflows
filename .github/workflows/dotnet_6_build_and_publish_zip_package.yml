@@ -27,7 +27,9 @@ on:
         required: true
       stagingRunNumber:
         required: true
-
+      isHotfix:
+        required: false
+        
 env:
   SERVICE: ${{ github.event.repository.name }}
         
@@ -43,7 +45,10 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ secrets.dotnetVersion }}.x
-          
+
+      - name: Set isHotfix environment variable
+        run: echo "IS_HOTFIX=${{ secrets.isHotfix }}" >> $GITHUB_ENV
+
       - name: Prepare environment variables for release
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -70,7 +75,7 @@ jobs:
           echo NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}') >> $GITHUB_ENV
 
       - name: if no 'v' tag, add feeds
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}  
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         working-directory: ./src
         run: |
           dotnet nuget add source ${{ secrets.nugetGithubHost }} --name github --username ${{ secrets.nugetGithubUsername }} --password ${{ secrets.nugetGithubPassword }} --store-password-in-clear-text
@@ -79,17 +84,17 @@ jobs:
       
       - name: If no 'v' tag, build service
         working-directory: ./src
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}  
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         run: 'dotnet publish ${{env.NAME}}.csproj --configuration Release --output Publish -r win-x64 --self-contained true /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}'
      
       - name: If no 'v' tag, zip build results
         working-directory: ./src
-        if: ${{!startsWith(github.ref, 'refs/tags/v')}}  
+        if: ${{!startsWith(github.ref, 'refs/tags/v') || ( startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true')}}
         run: cd ./Publish; zip -r ${{ env.NAME}}-${{ env.VERSION }}.zip .
            
       - name: If 'v' tag, zip build results
         working-directory: ./src
-        if:  ${{ startsWith(github.ref, 'refs/tags/v')}}
+        if: ${{(startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'false')}}
         run: |
            curl -u "${{ secrets.packageRepoUsername }}:${{ secrets.packageRepoPassword }}" ${{ secrets.packageRepoHost }}/staging/${{env.NAME}}/${{env.NAME}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip --output ${{env.NAME}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip
 
