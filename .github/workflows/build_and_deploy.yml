@@ -88,7 +88,6 @@ jobs:
 
   check_for_staging_if_v_tag:
     needs: check_if_hotfix
-    if: ${{ needs.check_if_hotfix.outputs.HOTFIX_STATUS =='false'}}
     runs-on: ubuntu-latest
     outputs:
       STAGING_RUN_NUMBER: ${{ steps.check_staging_tag.outputs.result }}
@@ -103,7 +102,7 @@ jobs:
           echo BASE_VERSION=$(echo ${GITHUB_REF/refs\/tags\/v/}) >> $GITHUB_ENV
 
       - name: If 'v' tag, check if staging tag exists and get run number
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: ${{startsWith(github.ref, 'refs/tags/v') && needs.check_if_hotfix.outputs.HOTFIX_STATUS =='false'}}
         id: check_staging_tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
