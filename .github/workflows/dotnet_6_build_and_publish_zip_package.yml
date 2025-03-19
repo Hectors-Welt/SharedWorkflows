@@ -142,7 +142,7 @@ jobs:
           username: ${{ secrets.packageRepoUsername }}
           password: ${{ secrets.packageRepoPassword }}
           port: ${{ secrets.packageRepoPort }}
-          source: ./src/publish/${{ env.NAME }}-${{ env.VERSION }}.zip
+          source: ./src/Publish/${{ env.NAME}}-${{ env.VERSION }}.zip
           target: release/${{ env.NAME }}
           strip_components: 3
 
