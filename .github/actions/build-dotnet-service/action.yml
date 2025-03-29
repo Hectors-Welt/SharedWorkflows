@@ -1,0 +1,53 @@
+name: 'Build dotnet service'
+description: 'Adds the NuGet feeds and builds the service'
+
+inputs:
+  service_name:
+    description: 'The name of the service'
+    required: true
+  version:
+    description: 'The version'
+    required: true
+  dotnet_version: 
+    description: 'The version of .NET Core to use'
+    required: true
+  nuget_github_host:  
+    description: 'The GitHub NuGet host'
+    required: true
+  nuget_github_username:
+    description: 'The GitHub NuGet username'
+    required: true
+  nuget_github_password:
+    description: 'The GitHub NuGet password'
+    required: true
+  hangfire_feed_url:
+    description: 'The Hangfire feed URL'
+    required: true
+  hangfire_username:
+    description: 'The Hangfire username'
+    required: true
+  hangfire_password:
+    description: 'The Hangfire password'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ inputs.dotnet_version }}.x
+
+    - name: if no 'v' tag, add feeds
+      run: |
+        dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
+        dotnet nuget add source ${{ inputs.hangfire_feed_url }} --name hangfirePro --username ${{ inputs.hangfire_username }} --password ${{ inputs.hangfire_password }} --store-password-in-clear-text
+        dotnet restore
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
+    - name: If no 'v' tag, publish service
+      run: >
+        dotnet publish ${{ inputs.service_name }}.csproj --configuration Release --output Publish/opt/hector/${{ inputs.service_name }}
+        -r linux-x64 --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
