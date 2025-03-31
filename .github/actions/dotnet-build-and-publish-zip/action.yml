@@ -54,6 +54,13 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: If no 'v' tag, publish service
+      run: >
+        dotnet publish ${{ inputs.service_name }}.csproj --configuration Release --output Publish
+        -r win-x64 --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
+
     - name: If no 'v' tag, zip build results
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: cd ./Publish; zip -r ${{ inputs.service_name }}-${{ inputs.version }}.zip .
