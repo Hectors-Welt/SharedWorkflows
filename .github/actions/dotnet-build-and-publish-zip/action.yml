@@ -32,17 +32,11 @@ inputs:
   nexus_apt_repo_password:
     description: 'Nexus APT repo password'
     required: true
-  registry:
-    description: 'Docker registry'
-    required: true
   package_registry_token:
     description: 'Package registry token'
     required: true
   is_hotfix:
     description: 'Is this a hotfix?'
-    required: true
-  dotnet_version: 
-    description: 'The version of .NET Core to use'
     required: true
   package_repo_username:
     description: 'The username for the package repo'
