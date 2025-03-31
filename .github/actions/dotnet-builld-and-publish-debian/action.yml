@@ -1,0 +1,168 @@
+name: 'Build Default Service'
+description: 'Builds the default service'
+
+inputs:
+  service_name:
+    description: 'The name of the service'
+    required: true
+  environment:
+    description: 'The environment'
+    required: true
+  version:
+    description: 'The version'
+    required: true
+  base_version:
+    description: 'The base version'
+    required: true
+  staging_run_number:
+    description: 'The run number of the staging version (if exists)'
+    required: true
+  nexus_apt_repo_host_prerelease:
+    description: 'Nexus APT repo host for prerelease'
+    required: true
+  nexus_apt_repo_host_staging:
+    description: 'Nexus APT repo host for staging'
+    required: true
+  nexus_apt_repo_host:
+    description: 'Nexus APT repo host'
+    required: true
+  nexus_apt_repo_username:
+    description: 'Nexus APT repo username'
+    required: true
+  nexus_apt_repo_password:
+    description: 'Nexus APT repo password'
+    required: true
+  registry:
+    description: 'Docker registry'
+    required: true
+  package_registry_token:
+    description: 'Package registry token'
+    required: true
+  is_hotfix:
+    description: 'Is this a hotfix?'
+    required: true
+  dotnet_version: 
+    description: 'The version of .NET Core to use'
+    required: true
+  nuget_github_host:
+    description: 'The GitHub NuGet host'
+    required: true
+  nuget_github_username:
+    description: 'The GitHub NuGet username'
+    required: true
+  nuget_github_password:
+    description: 'The GitHub NuGet password'
+    required: true
+  hangfire_feed_url:
+    description: 'The Hangfire feed URL'
+    required: true
+  hangfire_username:
+    description: 'The Hangfire username'
+    required: true
+  hangfire_password:
+    description: 'The Hangfire password'
+    required: true
+
+
+runs:
+  using: 'composite'
+  steps:
+    - name: If no 'v' tag, create file paths
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
+      run: |
+        mkdir -p Publish/etc/systemd/system/
+        mkdir Publish/DEBIAN
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
+
+    - name: If no 'v' tag, create systemd unit
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
+      run: |
+        cat << EOF > Publish/etc/systemd/system/${{ inputs.service_name }}.service
+        [Unit]
+        Description=Hector ${{ inputs.service_name }}
+        After=network-online.target
+        Requires=network-online.target
+        
+        [Service]
+        EnvironmentFile=/etc/serviceEnvironment
+        WorkingDirectory=/opt/hector/${{ inputs.service_name }}
+        ExecStart=/opt/hector/${{ inputs.service_name }}/${{ inputs.service_name }}
+        TimeoutStopSec=1
+        Restart=always
+        RestartSec=5
+        
+        [Install]
+        WantedBy=multi-user.target
+        EOF
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
+
+    - name: If no 'v' tag, create postinstall script
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
+      run: |
+        cat << EOF > Publish/DEBIAN/postinst
+        #!/bin/sh
+        systemctl enable ${{inputs.service_name}}.service --now
+        EOF
+        chmod 755 Publish/DEBIAN/postinst
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
+
+    - name: If no 'v' tag, create preremove script
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
+      run: |
+        cat << EOF > Publish/DEBIAN/prerm
+        #!/bin/sh
+        systemctl disable ${{inputs.service_name}}.service --now
+        EOF
+        chmod 755 Publish/DEBIAN/prerm
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
+
+    - name: If no 'v' tag, set user and group to root
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
+      run: |
+        sudo chown -R root:root Publish
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
+      
+    - name: If no 'v' tag, build deb package
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
+      id: package
+      uses: jiro4989/build-deb-action@v2
+      with:
+        package: ${{ inputs.service_name }}
+        package_root: src/apps/${{ inputs.service_name }}/Publish
+        maintainer: "Hectors-Welt GmbH"
+        version: ${{ inputs.version }}
+        arch: "amd64"
+        desc: Hector ${{ inputs.service_name }}
+
+    - name: Get package binarys from staging repo
+      if: ${{ inputs.environment == 'release' && inputs.is_hotfix == 'false' }}
+      id: debian_package
+      run: |
+        FIRST_CHAR=`echo ${{inputs.service_name}} | cut -c1-1`
+        echo FIRST_CHAR=$(echo $FIRST_CHAR) >> $GITHUB_ENV
+        curl --fail ${{ inputs.nexus_apt_repo_host_staging }}pool/${FIRST_CHAR}/${{inputs.service_name}}/${{inputs.service_name}}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb --output ${{inputs.service_name}}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb
+      shell: bash
+
+    - name: Package and Publish to Nexus
+      run: |
+        DEB_FILE="${{ steps.package.outputs.file_name }}"
+        if [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "false" ]]; then
+          REPO_URL="${{ inputs.nexus_apt_repo_host}}"
+        elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "true" ]]; then
+          REPO_URL="${{ inputs.nexus_apt_repo_host }}"
+        elif [[ "${{ inputs.environment }}" == "prerelease" ]]; then
+          REPO_URL="${{ inputs.nexus_apt_repo_host_prerelease }}"
+        elif [[ "${{ inputs.environment }}" == "staging" ]]; then
+          REPO_URL="${{ inputs.nexus_apt_repo_host_staging }}"
+        fi
+
+        curl --fail -u "${{ inputs.nexus_apt_repo_username }}:${{ inputs.nexus_apt_repo_password }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@$DEB_FILE" \
+          "$REPO_URL"
+      shell: bash
