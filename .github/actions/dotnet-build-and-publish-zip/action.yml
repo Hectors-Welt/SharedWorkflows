@@ -1,0 +1,141 @@
+name: 'Build Zip'
+description: 'Builds the zip package for the service'
+
+inputs:
+  service_name:
+    description: 'The name of the service'
+    required: true
+  environment:
+    description: 'The environment'
+    required: true
+  version:
+    description: 'The version'
+    required: true
+  base_version:
+    description: 'The base version'
+    required: true
+  staging_run_number:
+    description: 'The run number of the staging version (if exists)'
+    required: true
+  nexus_apt_repo_host_prerelease:
+    description: 'Nexus APT repo host for prerelease'
+    required: true
+  nexus_apt_repo_host_staging:
+    description: 'Nexus APT repo host for staging'
+    required: true
+  nexus_apt_repo_host:
+    description: 'Nexus APT repo host'
+    required: true
+  nexus_apt_repo_username:
+    description: 'Nexus APT repo username'
+    required: true
+  nexus_apt_repo_password:
+    description: 'Nexus APT repo password'
+    required: true
+  registry:
+    description: 'Docker registry'
+    required: true
+  package_registry_token:
+    description: 'Package registry token'
+    required: true
+  is_hotfix:
+    description: 'Is this a hotfix?'
+    required: true
+  dotnet_version: 
+    description: 'The version of .NET Core to use'
+    required: true
+  package_repo_username:
+    description: 'The username for the package repo'
+    required: true
+  package_repo_password:
+    description: 'The password for the package repo'
+    required: true
+  package_repo_host:
+    description: 'The host for the package repo'
+    required: true
+  package_repo_port:  
+    description: 'The port for the package repo'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: If no 'v' tag, zip build results
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
+      run: cd ./Publish; zip -r ${{ inputs.service_name }}-${{ inputs.version }}.zip .
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
+
+    - name: If 'v' tag, zip build results
+      if: ${{ inputs.environment == 'release' && inputs.is_hotfix == 'true' }}
+      run: |
+          curl -u "${{ inputs.package_repo_username }}:${{ inputs.package_repo_password }}" ${{ inputs.package_repo_host }}/staging/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip --output ${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
+
+    - name: Publish zip to Nexus
+      run: |
+        if [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "false" ]]; then
+          REPO_URL="https://nexus.hectorts.de/repository/windows/${{ inputs.service_name}}/${{ inputs.service_name}}-${{ inputs.base_version }}.${{ inputs.staging_run_number }}.zip"
+          FILE_PATH="src/apps/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{ inputs.staging_run_number }}.zip"
+        elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "true" ]]; then
+          REPO_URL="https://nexus.hectorts.de/repository/windows/${{ inputs.service_name}}/${{ inputs.service_name}}-${{ inputs.version }}.zip"
+          FILE_PATH="src/apps/${{ inputs.service_name }}/Publish/${{ inputs.service_name }}-${{ inputs.version }}.zip"
+        elif [[ "${{ inputs.environment }}" == "prerelease" ]]; then
+          REPO_URL="https://nexus.hectorts.de/repository/windows-pre/${{ inputs.service_name}}/${{ inputs.service_name}}-${{ inputs.version }}.zip"
+          FILE_PATH="src/apps/${{ inputs.service_name }}/Publish/${{ inputs.service_name }}-${{ inputs.version }}.zip"
+        elif [[ "${{ inputs.environment }}" == "staging" ]]; then
+          REPO_URL="https://nexus.hectorts.de/repository/windows-stg/${{ inputs.service_name}}/${{ inputs.service_name}}-${{ inputs.version }}.zip"
+          FILE_PATH="src/apps/${{ inputs.service_name }}/Publish/${{ inputs.service_name }}-${{ inputs.version }}.zip"
+        fi
+
+        curl -u "${{ inputs.nexus_apt_repo_username }}:${{ inputs.nexus_apt_repo_password }}" --upload-file "$FILE_PATH" "$REPO_URL"
+      shell: bash
+
+    - name: copy file via ssh password to staging repo
+      if: ${{ inputs.environment == 'staging' }}
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ inputs.package_repo_host }}
+        username: ${{ inputs.package_repo_username }}
+        password: ${{ inputs.package_repo_password }}
+        port: ${{ inputs.package_repo_port }}
+        source: src/apps/${{ inputs.service_name }}/Publish/${{ inputs.service_name }}-${{ inputs.version }}.zip
+        target: staging/${{ inputs.service_name }}
+        strip_components: 4
+
+    - name: copy file via ssh password to release repo
+      if: ${{ inputs.environment == 'release' && inputs.is_hotfix == 'false' }}
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ inputs.package_repo_host }}
+        username: ${{ inputs.package_repo_username }}
+        password: ${{ inputs.package_repo_password }}
+        port: ${{ inputs.package_repo_port }}
+        source: src/apps/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip
+        target: release/${{ inputs.service_name }}
+        strip_components: 3
+
+    - name: copy file via ssh password to release repo
+      if: ${{ inputs.environment == 'release' && inputs.is_hotfix == 'true' }}
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ inputs.package_repo_host }}
+        username: ${{ inputs.package_repo_username }}
+        password: ${{ inputs.package_repo_password }}
+        port: ${{ inputs.package_repo_port }}
+        source: src/apps/${{ inputs.service_name }}/Publish/${{ inputs.service_name }}-${{ inputs.version }}.zip
+        target: release/${{ inputs.service_name }}
+        strip_components: 4
+
+    - name: copy file via ssh password to prerelease repo
+      if: ${{ inputs.environment == 'prerelease' }}
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ inputs.package_repo_host }}
+        username: ${{ inputs.package_repo_username }}
+        password: ${{ inputs.package_repo_password }}
+        port: ${{ inputs.package_repo_port}}
+        source: src/apps/${{ inputs.service_name }}/Publish/${{ inputs.service_name }}-${{ inputs.version }}.zip
+        target: prerelease/${{ inputs.service_name }}
+        strip_components: 4
