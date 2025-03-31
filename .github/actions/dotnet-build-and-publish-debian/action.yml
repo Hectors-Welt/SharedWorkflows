@@ -42,6 +42,14 @@ inputs:
 runs:
   using: 'composite'
   steps:
+
+    - name: If no 'v' tag, publish service
+      run: >
+        dotnet publish ${{ inputs.service_name }}.csproj --configuration Release --output Publish/opt/hector/${{ inputs.service_name }}
+        -r linux-x64 --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
+      shell: bash
+      working-directory: src/apps/${{ inputs.service_name }}
+      
     - name: If no 'v' tag, create file paths
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
