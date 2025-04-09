@@ -134,19 +134,23 @@ runs:
 
     - name: Package and Publish to Nexus
       run: |
-        DEB_FILE="${{ steps.package.outputs.file_name }}"
         if [[ "${{ inputs.environment }}" == "release" ]]; then
           REPO_URL="${{ inputs.nexus_apt_repo_host}}"
+          DEB_FILE="${{inputs.service_name}}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb"
         elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "true" ]]; then
           REPO_URL="${{ inputs.nexus_apt_repo_host }}"
+          DEB_FILE="${{ steps.package.outputs.file_name }}"
         elif [[ "${{ inputs.environment }}" == "prerelease" ]]; then
           REPO_URL="${{ inputs.nexus_apt_repo_host_prerelease }}"
+          DEB_FILE="${{ steps.package.outputs.file_name }}"
         elif [[ "${{ inputs.environment }}" == "staging" ]]; then
           REPO_URL="${{ inputs.nexus_apt_repo_host_staging }}"
+          DEB_FILE="${{ steps.package.outputs.file_name }}"
         fi
 
         curl --fail -u "${{ inputs.nexus_apt_repo_username }}:${{ inputs.nexus_apt_repo_password }}" \
           -H "Content-Type: multipart/form-data" \
           --data-binary "@$DEB_FILE" \
           "$REPO_URL"
+        
       shell: bash
