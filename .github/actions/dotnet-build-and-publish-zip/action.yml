@@ -69,7 +69,7 @@ runs:
       working-directory: src/apps/${{ inputs.service_name }}
 
     - name: If 'v' tag, zip build results
-      if: ${{ inputs.environment == 'release' && inputs.is_hotfix == 'true' }}
+      if: ${{ inputs.environment == 'release'  }}
       run: |
           curl -u "${{ inputs.package_repo_username }}:${{ inputs.package_repo_password }}" ${{ inputs.package_repo_host }}/staging/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip --output ${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip
       shell: bash
@@ -77,7 +77,7 @@ runs:
 
     - name: Publish-Zip zip to Nexus
       run: |
-        if [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "false" ]]; then
+        if [[ "${{ inputs.environment }}" == "release"  ]]; then
           REPO_URL="https://nexus.hectorts.de/repository/windows/${{ inputs.service_name}}/${{ inputs.service_name}}-${{ inputs.base_version }}.${{ inputs.staging_run_number }}.zip"
           FILE_PATH="src/apps/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{ inputs.staging_run_number }}.zip"
         elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "true" ]]; then
