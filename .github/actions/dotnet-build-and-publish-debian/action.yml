@@ -135,7 +135,7 @@ runs:
     - name: Package and Publish to Nexus
       run: |
         DEB_FILE="${{ steps.package.outputs.file_name }}"
-        if [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "false" ]]; then
+        if [[ "${{ inputs.environment }}" == "release" ]]; then
           REPO_URL="${{ inputs.nexus_apt_repo_host}}"
         elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "true" ]]; then
           REPO_URL="${{ inputs.nexus_apt_repo_host }}"
