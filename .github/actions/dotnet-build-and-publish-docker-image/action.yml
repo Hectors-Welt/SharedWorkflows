@@ -54,6 +54,7 @@ runs:
         registry: ${{ inputs.docker_registry }}
         username: ${{ inputs.nexusDockerUsername }}
         password: ${{ inputs.nexusDockerPassword }}
+       shell: bash
 
      - name: create docker file
        working-directory: ./src/apps/${{ inputs.service_name }}
@@ -81,7 +82,8 @@ runs:
           ENTRYPOINT [ "sh", "-c", "dotnet ${{ inputs.service_name }}.dll" ]
           EOF
           echo "Dockerfile created"   
-            
+       shell: bash
+    
      - name: Extract metadata (tags, labels) for Docker
        id: meta
        uses: docker/metadata-action@v2
@@ -91,12 +93,14 @@ runs:
             latest=false
           tags: |
             type=ref,event=tag
+       shell: bash
 
      - name: Get servicename to lowercase
        id: toLowerCase
        run: |
          INPUT=${{ inputs.service_name }}
          echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT 
+       shell: bash
 
      - name: Build and push Docker image
        if: ${{ ( inputs.environment == 'release' ) }}
@@ -109,6 +113,7 @@ runs:
          tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:release
          labels: ${{ steps.meta.outputs.labels }}
          file: ./src/apps/${{ inputs.service_name }}/Dockerfile
+       shell: bash
 
      - name: Build and push Docker image
        if: ${{ ( inputs.environment == 'staging' ) }}
@@ -121,6 +126,7 @@ runs:
          tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:staging
          labels: ${{ steps.meta.outputs.labels }}
          file: ./src/apps/${{ inputs.service_name }}/Dockerfile  
+       shell: bash
 
      - name: Build and push Docker image
        if: ${{ ( inputs.environment == 'prerelease' ) }}
@@ -133,3 +139,5 @@ runs:
          tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:prerelease
          labels: ${{ steps.meta.outputs.labels }}
          file: ./src/apps/${{ inputs.service_name }}/Dockerfile     
+       shell: bash
+ 
