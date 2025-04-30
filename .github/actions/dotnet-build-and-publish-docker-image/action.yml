@@ -52,8 +52,8 @@ runs:
       uses: docker/login-action@v2
       with:
         registry: ${{ inputs.docker_registry }}
-        username: ${{ inputs.nexusDockerUsername }}
-        password: ${{ inputs.nexusDockerPassword }}
+        username: ${{ inputs.nexus_docker_username }}
+        password: ${{ inputs.nexus_docker_password }}
 
     - name: create docker file
       working-directory: ./src/apps/${{ inputs.service_name }}
