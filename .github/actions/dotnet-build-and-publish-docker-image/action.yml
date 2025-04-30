@@ -1,143 +1,142 @@
-name: 'Build docker image'
-description: 'Builds and publish docker image for the service'
+name: "Build docker image"
+description: "Builds and publish docker image for the service"
 
 inputs:
   service_name:
-    description: 'The name of the service'
+    description: "The name of the service"
     required: true
   environment:
-    description: 'The environment'
+    description: "The environment"
     required: true
   version:
-    description: 'The version'
+    description: "The version"
     required: true
   base_version:
-    description: 'The base version'
+    description: "The base version"
     required: true
   staging_run_number:
-    description: 'The run number of the staging version (if exists)'
+    description: "The run number of the staging version (if exists)"
     required: true
   nexus_docker_username:
-    description: 'The username for the Nexus Docker registry'
+    description: "The username for the Nexus Docker registry"
     required: true
-  nexus_docker_password:  
-    description: 'The password for the Nexus Docker registry'
+  nexus_docker_password:
+    description: "The password for the Nexus Docker registry"
     required: true
   docker_registry:
-    description: 'The Docker registry URL'
+    description: "The Docker registry URL"
     required: true
-  nuget_github_host:  
-    description: 'The GitHub NuGet host'
+  nuget_github_host:
+    description: "The GitHub NuGet host"
     required: true
   nuget_github_username:
-    description: 'The GitHub NuGet username'
+    description: "The GitHub NuGet username"
     required: true
   nuget_github_password:
-    description: 'The GitHub NuGet password'
+    description: "The GitHub NuGet password"
     required: true
   hangfire_feed_url:
-    description: 'The Hangfire feed URL'
+    description: "The Hangfire feed URL"
     required: true
   hangfire_username:
-    description: 'The Hangfire username'
+    description: "The Hangfire username"
     required: true
   hangfire_password:
-    description: 'The Hangfire password'
+    description: "The Hangfire password"
     required: true
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
-     - name: Log in to the Container registry
-       uses: docker/login-action@v2
-       with:
+    - name: Log in to the Container registry
+      uses: docker/login-action@v2
+      with:
         registry: ${{ inputs.docker_registry }}
         username: ${{ inputs.nexusDockerUsername }}
         password: ${{ inputs.nexusDockerPassword }}
-       shell: bash
+      shell: bash
 
-     - name: create docker file
-       working-directory: ./src/apps/${{ inputs.service_name }}
-       run: | 
-          cat <<EOF >Dockerfile
-          FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-          WORKDIR /app
-          EXPOSE 80
-          FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-          COPY ./ .
-          RUN ls -al
-          WORKDIR "/src/apps/${{ inputs.service_name }}/."
-          RUN dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nugetGithubUsername }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
-          WORKDIR "/src/apps/${{ inputs.service_name }}/."
-          RUN dotnet nuget add source ${{ inputs.hangfire_feed_url }} --name hangfirePro --username ${{ inputs.hangfire_username }} --password ${{ inputs.hangfire_password }} --store-password-in-clear-text
-          WORKDIR "/src/apps/${{ inputs.service_name }}/."
-          RUN dotnet restore
-          WORKDIR "/src/apps/${{ inputs.service_name }}/."
-          RUN dotnet build "${{ inputs.service_name }}.csproj" -c Release -o /app/build
-          FROM build AS publish
-          RUN dotnet publish "${{ inputs.service_name }}.csproj" -c Release -o /app/publish /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
-          FROM base AS final
-          WORKDIR /app
-          COPY --from=publish /app/publish .
-          ENTRYPOINT [ "sh", "-c", "dotnet ${{ inputs.service_name }}.dll" ]
-          EOF
-          echo "Dockerfile created"   
-       shell: bash
-    
-     - name: Extract metadata (tags, labels) for Docker
-       id: meta
-       uses: docker/metadata-action@v2
-       with:
-          images: ${{ inputs.docker_registry }}/${{ inputs.service_name }}
-          flavor: |
-            latest=false
-          tags: |
-            type=ref,event=tag
-       shell: bash
+    - name: create docker file
+      working-directory: ./src/apps/${{ inputs.service_name }}
+      run: |
+        cat <<EOF >Dockerfile
+        FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+        WORKDIR /app
+        EXPOSE 80
+        FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+        COPY ./ .
+        RUN ls -al
+        WORKDIR "/src/apps/${{ inputs.service_name }}/."
+        RUN dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nugetGithubUsername }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
+        WORKDIR "/src/apps/${{ inputs.service_name }}/."
+        RUN dotnet nuget add source ${{ inputs.hangfire_feed_url }} --name hangfirePro --username ${{ inputs.hangfire_username }} --password ${{ inputs.hangfire_password }} --store-password-in-clear-text
+        WORKDIR "/src/apps/${{ inputs.service_name }}/."
+        RUN dotnet restore
+        WORKDIR "/src/apps/${{ inputs.service_name }}/."
+        RUN dotnet build "${{ inputs.service_name }}.csproj" -c Release -o /app/build
+        FROM build AS publish
+        RUN dotnet publish "${{ inputs.service_name }}.csproj" -c Release -o /app/publish /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
+        FROM base AS final
+        WORKDIR /app
+        COPY --from=publish /app/publish .
+        ENTRYPOINT [ "sh", "-c", "dotnet ${{ inputs.service_name }}.dll" ]
+        EOF
+        echo "Dockerfile created"
+      shell: bash
 
-     - name: Get servicename to lowercase
-       id: toLowerCase
-       run: |
-         INPUT=${{ inputs.service_name }}
-         echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT 
-       shell: bash
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v2
+      with:
+        images: ${{ inputs.docker_registry }}/${{ inputs.service_name }}
+        flavor: |
+          latest=false
+        tags: |
+          type=ref,event=tag
+      shell: bash
 
-     - name: Build and push Docker image
-       if: ${{ ( inputs.environment == 'release' ) }}
-       uses: docker/build-push-action@v4
-       with:
-         context: .
-         build-args: |
-           SERVICE=${{ inputs.service_name }}
-         push: true
-         tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:release
-         labels: ${{ steps.meta.outputs.labels }}
-         file: ./src/apps/${{ inputs.service_name }}/Dockerfile
-       shell: bash
+    - name: Get servicename to lowercase
+      id: toLowerCase
+      run: |
+        INPUT=${{ inputs.service_name }}
+        echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT
+      shell: bash
 
-     - name: Build and push Docker image
-       if: ${{ ( inputs.environment == 'staging' ) }}
-       uses: docker/build-push-action@v4
-       with:
-         context: .
-         build-args: |
-           SERVICE=${{ inputs.service_name }}
-         push: true
-         tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:staging
-         labels: ${{ steps.meta.outputs.labels }}
-         file: ./src/apps/${{ inputs.service_name }}/Dockerfile  
-       shell: bash
+    - name: Build and push Docker image
+      if: ${{ ( inputs.environment == 'release' ) }}
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        build-args: |
+          SERVICE=${{ inputs.service_name }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:release
+        labels: ${{ steps.meta.outputs.labels }}
+        file: ./src/apps/${{ inputs.service_name }}/Dockerfile
+      shell: bash
 
-     - name: Build and push Docker image
-       if: ${{ ( inputs.environment == 'prerelease' ) }}
-       uses: docker/build-push-action@v4
-       with:
-         context: .
-         build-args: |
-           SERVICE=${{ inputs.service_name }}
-         push: true
-         tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:prerelease
-         labels: ${{ steps.meta.outputs.labels }}
-         file: ./src/apps/${{ inputs.service_name }}/Dockerfile     
-       shell: bash
- 
+    - name: Build and push Docker image
+      if: ${{ ( inputs.environment == 'staging' ) }}
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        build-args: |
+          SERVICE=${{ inputs.service_name }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:staging
+        labels: ${{ steps.meta.outputs.labels }}
+        file: ./src/apps/${{ inputs.service_name }}/Dockerfile
+      shell: bash
+
+    - name: Build and push Docker image
+      if: ${{ ( inputs.environment == 'prerelease' ) }}
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        build-args: |
+          SERVICE=${{ inputs.service_name }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:prerelease
+        labels: ${{ steps.meta.outputs.labels }}
+        file: ./src/apps/${{ inputs.service_name }}/Dockerfile
+      shell: bash
