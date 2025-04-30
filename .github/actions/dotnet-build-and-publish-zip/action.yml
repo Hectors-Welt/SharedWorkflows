@@ -1,58 +1,58 @@
-name: 'Build Zip'
-description: 'Builds and publish zip package for the service'
+name: "Build Zip"
+description: "Builds and publish zip package for the service"
 
 inputs:
   service_name:
-    description: 'The name of the service'
+    description: "The name of the service"
     required: true
   environment:
-    description: 'The environment'
+    description: "The environment"
     required: true
   version:
-    description: 'The version'
+    description: "The version"
     required: true
   base_version:
-    description: 'The base version'
+    description: "The base version"
     required: true
   staging_run_number:
-    description: 'The run number of the staging version (if exists)'
+    description: "The run number of the staging version (if exists)"
     required: true
   nexus_apt_repo_host_prerelease:
-    description: 'Nexus APT repo host for prerelease'
+    description: "Nexus APT repo host for prerelease"
     required: true
   nexus_apt_repo_host_staging:
-    description: 'Nexus APT repo host for staging'
+    description: "Nexus APT repo host for staging"
     required: true
   nexus_apt_repo_host:
-    description: 'Nexus APT repo host'
+    description: "Nexus APT repo host"
     required: true
   nexus_apt_repo_username:
-    description: 'Nexus APT repo username'
+    description: "Nexus APT repo username"
     required: true
   nexus_apt_repo_password:
-    description: 'Nexus APT repo password'
+    description: "Nexus APT repo password"
     required: true
   package_registry_token:
-    description: 'Package registry token'
+    description: "Package registry token"
     required: true
   is_hotfix:
-    description: 'Is this a hotfix?'
+    description: "Is this a hotfix?"
     required: true
   package_repo_username:
-    description: 'The username for the package repo'
+    description: "The username for the package repo"
     required: true
   package_repo_password:
-    description: 'The password for the package repo'
+    description: "The password for the package repo"
     required: true
   package_repo_host:
-    description: 'The host for the package repo'
+    description: "The host for the package repo"
     required: true
-  package_repo_port:  
-    description: 'The port for the package repo'
+  package_repo_port:
+    description: "The port for the package repo"
     required: true
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: If no 'v' tag, publish service
       if: ${{ ( inputs.environment != 'release' ) }}
@@ -71,7 +71,7 @@ runs:
     - name: If 'v' tag, zip build results
       if: ${{ inputs.environment == 'release'  }}
       run: |
-          curl -u "${{ inputs.package_repo_username }}:${{ inputs.package_repo_password }}" ${{ inputs.package_repo_host }}/staging/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip --output ${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip
+        curl -u "${{ inputs.package_repo_username }}:${{ inputs.package_repo_password }}" ${{ inputs.package_repo_host }}/staging/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip --output ${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip
       shell: bash
       working-directory: src/apps/${{ inputs.service_name }}
 
@@ -118,17 +118,17 @@ runs:
         target: release/${{ inputs.service_name }}
         strip_components: 3
 
- #   - name: copy file via ssh password to release repo
-  #    if: ${{ inputs.environment == 'release' && inputs.is_hotfix == 'true' }}
-   #   uses: appleboy/scp-action@master
+    #   - name: copy file via ssh password to release repo
+    #    if: ${{ inputs.environment == 'release' && inputs.is_hotfix == 'true' }}
+    #   uses: appleboy/scp-action@master
     #  with:
-     #   host: ${{ inputs.package_repo_host }}
-      #  username: ${{ inputs.package_repo_username }}
-       # password: ${{ inputs.package_repo_password }}
-        #port: ${{ inputs.package_repo_port }}
-        #source: src/apps/${{ inputs.service_name }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip
-        #target: release/${{ inputs.service_name }} 
-      #strip_components: 4
+    #   host: ${{ inputs.package_repo_host }}
+    #  username: ${{ inputs.package_repo_username }}
+    # password: ${{ inputs.package_repo_password }}
+    #port: ${{ inputs.package_repo_port }}
+    #source: src/apps/${{ inputs.service_name }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip
+    #target: release/${{ inputs.service_name }}
+    #strip_components: 4
 
     - name: copy file via ssh password to prerelease repo
       if: ${{ inputs.environment == 'prerelease' }}
