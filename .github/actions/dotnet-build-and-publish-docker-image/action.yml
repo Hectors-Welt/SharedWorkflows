@@ -66,7 +66,7 @@ runs:
         COPY ./ .
         RUN ls -al
         WORKDIR "/src/apps/${{ inputs.service_name }}/."
-        RUN dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nugetGithubUsername }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
+        RUN dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
         WORKDIR "/src/apps/${{ inputs.service_name }}/."
         RUN dotnet nuget add source ${{ inputs.hangfire_feed_url }} --name hangfirePro --username ${{ inputs.hangfire_username }} --password ${{ inputs.hangfire_password }} --store-password-in-clear-text
         WORKDIR "/src/apps/${{ inputs.service_name }}/."
