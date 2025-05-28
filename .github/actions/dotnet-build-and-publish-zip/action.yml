@@ -128,9 +128,9 @@ runs:
         username: ${{ inputs.package_repo_username }}
         password: ${{ inputs.package_repo_password }}
         port: ${{ inputs.package_repo_port }}
-        source: src/apps/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.version }}.zip
+        source: src/apps/${{ inputs.service_name }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip
         target: release/${{ inputs.service_name }}
-        strip_components: 3
+        strip_components: 4
     #   - name: copy file via ssh password to release repo
     #    if: ${{ inputs.environment == 'release' && inputs.is_hotfix == 'true' }}
     #   uses: appleboy/scp-action@master
