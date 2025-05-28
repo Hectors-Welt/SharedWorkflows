@@ -43,7 +43,7 @@ runs:
   using: "composite"
   steps:
     - name: If no 'v' tag, publish service
-      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success')) }}
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: >
         dotnet publish ${{ inputs.service_name }}.csproj --configuration Release --output Publish/opt/hector/${{ inputs.service_name }}
         -r linux-x64 --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
@@ -51,7 +51,7 @@ runs:
       working-directory: src/apps/${{ inputs.service_name }}
 
     - name: If no 'v' tag, create file paths
-      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success')) }}
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         mkdir -p Publish/etc/systemd/system/
         mkdir Publish/DEBIAN
@@ -59,7 +59,7 @@ runs:
       working-directory: src/apps/${{ inputs.service_name }}
 
     - name: If no 'v' tag, create systemd unit
-      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success')) }}
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         cat << EOF > Publish/etc/systemd/system/${{ inputs.service_name }}.service
         [Unit]
@@ -82,7 +82,7 @@ runs:
       working-directory: src/apps/${{ inputs.service_name }}
 
     - name: If no 'v' tag, create postinstall script
-      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success')) }}
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         cat << EOF > Publish/DEBIAN/postinst
         #!/bin/sh
@@ -93,7 +93,7 @@ runs:
       working-directory: src/apps/${{ inputs.service_name }}
 
     - name: If no 'v' tag, create preremove script
-      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success')) }}
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         cat << EOF > Publish/DEBIAN/prerm
         #!/bin/sh
@@ -104,14 +104,14 @@ runs:
       working-directory: src/apps/${{ inputs.service_name }}
 
     - name: If no 'v' tag, set user and group to root
-      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success')) }}
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         sudo chown -R root:root Publish
       shell: bash
       working-directory: src/apps/${{ inputs.service_name }}
 
     - name: If no 'v' tag, build deb package
-      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success')) }}
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       id: package
       uses: jiro4989/build-deb-action@v2
       with:
@@ -136,7 +136,7 @@ runs:
         if [[ "${{ inputs.environment }}" == "release"  && "${{ inputs.is_hotfix }}" == "false"]]; then
           REPO_URL="${{ inputs.nexus_apt_repo_host}}"
           DEB_FILE="${{inputs.service_name}}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb"
-        elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "success" ]]; then
+        elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "true" ]]; then
           REPO_URL="${{ inputs.nexus_apt_repo_host }}"
           DEB_FILE="${{ steps.package.outputs.file_name }}"
         elif [[ "${{ inputs.environment }}" == "prerelease" ]]; then
