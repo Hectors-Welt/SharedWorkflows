@@ -133,7 +133,7 @@ runs:
 
     - name: Package and Publish to Nexus
       run: |
-        if [[ "${{ inputs.environment }}" == "release"  && "${{ inputs.is_hotfix }}" == false]]; then
+        if [[ "${{ inputs.environment }}" == "release"  && "${{ inputs.is_hotfix }}" == false ]]; then
           REPO_URL="${{ inputs.nexus_apt_repo_host}}"
           DEB_FILE="${{inputs.service_name}}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb"
         elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == true ]]; then
