@@ -119,7 +119,7 @@ runs:
         strip_components: 3
 
     - name: copy file via ssh password to release repo
-      if: ${{ (inputs.environment == 'release'  &&  inputs.is_hotfix  == 'true') }}
+      if: ${{ (inputs.environment == 'release'  &&  inputs.is_hotfix  == 'success') }}
       uses: appleboy/scp-action@master
       with:
         host: ${{ inputs.package_repo_host }}
