@@ -78,16 +78,16 @@ runs:
     - name: Publish-Zip zip to Nexus
       run: |
         if [[ "${{ inputs.environment }}" == "release"  && "${{ inputs.is_hotfix }}" == "false"  ]]; then
-          REPO_URL="https://nexus.hectorts.de/repository/windows/${{ inputs.service_name}}/${{ inputs.service_name}}-${{ inputs.base_version }}.${{ inputs.staging_run_number }}.zip"
+          REPO_URL="https://nexus.hectorts.de/repository/windows/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{ inputs.staging_run_number }}.zip"
           FILE_PATH="src/apps/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{ inputs.staging_run_number }}.zip"
         elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == "success" ]]; then
-          REPO_URL="https://nexus.hectorts.de/repository/windows/${{ inputs.service_name}}/${{ inputs.service_name}}-${{ inputs.version }}.zip"
+          REPO_URL="https://nexus.hectorts.de/repository/windows/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.version }}.zip"
           FILE_PATH="src/apps/${{ inputs.service_name }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip"
         elif [[ "${{ inputs.environment }}" == "prerelease" ]]; then
-          REPO_URL="https://nexus.hectorts.de/repository/windows-pre/${{ inputs.service_name}}/${{ inputs.service_name}}-${{ inputs.version }}.zip"
+          REPO_URL="https://nexus.hectorts.de/repository/windows-pre/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.version }}.zip"
           FILE_PATH="src/apps/${{ inputs.service_name }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip"
         elif [[ "${{ inputs.environment }}" == "staging" ]]; then
-          REPO_URL="https://nexus.hectorts.de/repository/windows-stg/${{ inputs.service_name}}/${{ inputs.service_name}}-${{ inputs.version }}.zip"
+          REPO_URL="https://nexus.hectorts.de/repository/windows-stg/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.version }}.zip"
           FILE_PATH="src/apps/${{ inputs.service_name }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip"
         fi
 
