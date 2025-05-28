@@ -55,7 +55,7 @@ runs:
   using: "composite"
   steps:
     - name: If no 'v' tag, publish service
-      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success'))) }}
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success')) }}
       run: >
         dotnet publish ${{ inputs.service_name }}.csproj --configuration Release --output Publish-Zip
         -r win-x64 --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
@@ -63,13 +63,13 @@ runs:
       working-directory: src/apps/${{ inputs.service_name }}
 
     - name: If no 'v' tag, zip build results
-      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success'))) }}
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success')) }}
       run: cd ./Publish-Zip; zip -r ${{ inputs.service_name }}-${{ inputs.version }}.zip .
       shell: bash
       working-directory: src/apps/${{ inputs.service_name }}
 
     - name: If 'v' tag, zip build results
-      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success'))) }}
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'success')) }}
       run: |
         curl -u "${{ inputs.package_repo_username }}:${{ inputs.package_repo_password }}" ${{ inputs.package_repo_host }}/staging/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip --output ${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip
       shell: bash
@@ -107,7 +107,7 @@ runs:
         strip_components: 4
 
     - name: copy file via ssh password to release repo
-      if: ${{ inputs.environment == 'release'  &&  inputs.is_hotfix  == "false" }}
+      if: ${{ (inputs.environment == 'release'  &&  inputs.is_hotfix  == 'false' ) }}
       uses: appleboy/scp-action@master
       with:
         host: ${{ inputs.package_repo_host }}
@@ -119,7 +119,7 @@ runs:
         strip_components: 3
 
     - name: copy file via ssh password to release repo
-      if: ${{ inputs.environment == 'release'  &&  inputs.is_hotfix  == "true" }}
+      if: ${{ (inputs.environment == 'release'  &&  inputs.is_hotfix  == 'true') }}
       uses: appleboy/scp-action@master
       with:
         host: ${{ inputs.package_repo_host }}
