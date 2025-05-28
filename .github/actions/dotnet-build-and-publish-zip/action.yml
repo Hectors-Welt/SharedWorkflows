@@ -77,7 +77,7 @@ runs:
 
     # - name: Publish-Zip zip to Nexus
     #   run: |
-    #     if [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == false  ]]; then
+    #     if [[ "${{ inputs.environment }}" == "release" ]]; then
     #       if [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == false  ]]; then
     #         REPO_URL="https://nexus.hectorts.de/repository/windows/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{ inputs.staging_run_number }}.zip"
     #         FILE_PATH="src/apps/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{ inputs.staging_run_number }}.zip"
