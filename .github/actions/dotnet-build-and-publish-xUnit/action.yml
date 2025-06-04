@@ -57,24 +57,31 @@ runs:
         dotnet-version: 8.x
 
     - name: Add nuget source
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: >
         dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }}
         --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
       shell: bash
+      working-directory: src/devices/xunit
 
     - name: Publish service
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: >
         dotnet publish ./src/xunit.csproj --configuration Release --output Publish/opt/hector/xunit
         -r linux-arm --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
       shell: bash
+      working-directory: src/devices/xunit
 
     - name: Create file paths
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         mkdir -p Publish/etc/systemd/system/
         mkdir Publish/DEBIAN
       shell: bash
+      working-directory: src/devices/xunit
 
     - name: Create systemd unit
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         cat << EOF > Publish/etc/systemd/system/xunit.service
         [Unit]
@@ -93,8 +100,10 @@ runs:
         WantedBy=multi-user.target
         EOF
       shell: bash
+      working-directory: src/devices/xunit
 
     - name: Create postinstall script
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         cat << EOF > Publish/DEBIAN/postinst
         #!/bin/sh
@@ -102,8 +111,10 @@ runs:
         EOF
         chmod 755 Publish/DEBIAN/postinst
       shell: bash
+      working-directory: src/devices/xunit
 
     - name: Create preremove script
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         cat << EOF > Publish/DEBIAN/prerm
         #!/bin/sh
@@ -111,40 +122,57 @@ runs:
         EOF
         chmod 755 Publish/DEBIAN/prerm
       shell: bash
+      working-directory: src/devices/xunit
 
     - name: Set user and group to root
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         sudo chown -R root:root Publish
       shell: bash
+      working-directory: src/devices/xunit
 
     - name: Build deb package
+      if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       id: package
       uses: jiro4989/build-deb-action@v2
       with:
         package: xunit
-        package_root: Publish
+        package_root: src/devices/xunit/Publish
         maintainer: "Hectors-Welt GmbH"
         version: ${{ inputs.version }}
         arch: "armhf"
         desc: Hector xunit
 
-    - name: Push release deb package to nexus
-      if: startsWith(github.ref, 'refs/tags/v')
-      run: >
-        curl -u "${{ inputs.nexus_apt_repo_username }}:${{ inputs.nexus_apt_repo_password }}" -H "Content-Type: multipart/form-data"
-        --data-binary "@${{steps.package.outputs.file_name}}" "${{ inputs.nexus_apt_debian }}"
+    - name: Get package binarys from staging repo
+      if: ${{ (inputs.environment == 'release'  &&  inputs.is_hotfix  == 'false') }}
+      id: debian_package
+      run: |
+        curl --fail ${{ inputs.nexus_apt_debian_staging }}pool/x/xunit/xunit_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb --output xunit_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb
       shell: bash
 
-    - name: Push staging deb package to nexus
-      if: startsWith(github.ref, 'refs/tags/staging-')
-      run: >
-        curl -u "${{ inputs.nexus_apt_repo_username }}:${{ inputs.nexus_apt_repo_password }}" -H "Content-Type: multipart/form-data"
-        --data-binary "@${{steps.package.outputs.file_name}}" "${{ inputs.nexus_apt_debian_staging}}"
-      shell: bash
+    - name: Package and Publish to Nexus
+      run: |
+        if [[ "${{ inputs.environment }}" == "release" ]]; then
+          if [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == false  ]]; then
+            REPO_URL="${{ inputs.nexus_apt_debian }}"
+            DEB_FILE="xunit_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb"
+          elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == true ]]; then
+            REPO_URL="${{ inputs.nexus_apt_debian }}"
+            DEB_FILE="${{ steps.package.outputs.file_name }}"
+          fi
+        elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == true ]]; then
+          REPO_URL="${{ inputs.nexus_apt_debian }}"
+          DEB_FILE="${{ steps.package.outputs.file_name }}"
+        elif [[ "${{ inputs.environment }}" == "prerelease" ]]; then
+          REPO_URL="${{ inputs.nexus_apt_debian_pre }}"
+          DEB_FILE="${{ steps.package.outputs.file_name }}"
+        elif [[ "${{ inputs.environment }}" == "staging" ]]; then
+          REPO_URL="${{ inputs.nexus_apt_debian_staging }}"
+          DEB_FILE="${{ steps.package.outputs.file_name }}"
+        fi
 
-    - name: Push prerelease deb package to nexus
-      if: startsWith(github.ref, 'refs/tags/prerelease-')
-      run: >
-        curl -u "${{ inputs.nexus_apt_repo_username }}:${{ inputs.nexus_apt_repo_password }}" -H "Content-Type: multipart/form-data"
-        --data-binary "@${{steps.package.outputs.file_name}}" "${{ inputs.nexus_apt_debian_pre}}"
+        curl --fail -u "${{ inputs.nexus_apt_repo_username }}:${{ inputs.nexus_apt_repo_password }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@$DEB_FILE" \
+          "$REPO_URL"
       shell: bash
