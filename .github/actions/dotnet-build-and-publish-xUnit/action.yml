@@ -67,7 +67,7 @@ runs:
     - name: Publish service
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: >
-        dotnet publish ./src/${{inputs.service_name}}.csproj --configuration Release --output Publish/opt/hector/xunit
+        dotnet publish ${{inputs.service_name}}.csproj --configuration Release --output Publish/opt/hector/xunit
         -r linux-arm --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
       shell: bash
       working-directory: src/devices/${{inputs.service_name}}
