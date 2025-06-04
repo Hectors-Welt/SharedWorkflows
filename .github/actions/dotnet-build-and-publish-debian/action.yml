@@ -123,7 +123,7 @@ runs:
         desc: Hector ${{ inputs.service_name }}
 
     - name: Get package binarys from staging repo
-      if: ${{ (inputs.environment == 'release'  &&  inputs.is_hotfix  == 'false') }}
+      if: ${{ (inputs.environment == 'release'  &&  (inputs.is_hotfix  == 'false' || inputs.is_hotfix == '')) }}
       id: debian_package
       run: |
         FIRST_CHAR=`echo ${{inputs.service_name}} | cut -c1-1`
@@ -134,7 +134,7 @@ runs:
     - name: Package and Publish to Nexus
       run: |
         if [[ "${{ inputs.environment }}" == "release" ]]; then
-          if [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == false  ]]; then
+          if [[ "${{ inputs.environment }}" == "release" && ( "${{ inputs.is_hotfix }}" == "false" || -z "${{ inputs.is_hotfix }}" ) ]]; then
             REPO_URL="${{ inputs.nexus_apt_repo_host }}"
             DEB_FILE="${{inputs.service_name}}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb"
           elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == true ]]; then
