@@ -32,9 +32,6 @@ inputs:
   nexus_apt_repo_password:
     description: "Nexus APT repo password"
     required: true
-  package_registry_token:
-    description: "Package registry token"
-    required: true
   is_hotfix:
     description: "Is this a hotfix?"
     required: true
