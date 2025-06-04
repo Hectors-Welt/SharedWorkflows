@@ -62,7 +62,7 @@ runs:
         dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }}
         --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
       shell: bash
-      working-directory: src/devices/xunit
+      working-directory: src/devices/${{inputs.service_name}}
 
     - name: Publish service
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -70,7 +70,7 @@ runs:
         dotnet publish ./src/xunit.csproj --configuration Release --output Publish/opt/hector/xunit
         -r linux-arm --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
       shell: bash
-      working-directory: src/devices/xunit
+      working-directory: src/devices/${{inputs.service_name}}
 
     - name: Create file paths
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -78,7 +78,7 @@ runs:
         mkdir -p Publish/etc/systemd/system/
         mkdir Publish/DEBIAN
       shell: bash
-      working-directory: src/devices/xunit
+      working-directory: src/devices/${{inputs.service_name}}
 
     - name: Create systemd unit
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -100,7 +100,7 @@ runs:
         WantedBy=multi-user.target
         EOF
       shell: bash
-      working-directory: src/devices/xunit
+      working-directory: src/devices/${{inputs.service_name}}
 
     - name: Create postinstall script
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -111,7 +111,7 @@ runs:
         EOF
         chmod 755 Publish/DEBIAN/postinst
       shell: bash
-      working-directory: src/devices/xunit
+      working-directory: src/devices/${{inputs.service_name}}
 
     - name: Create preremove script
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -122,14 +122,14 @@ runs:
         EOF
         chmod 755 Publish/DEBIAN/prerm
       shell: bash
-      working-directory: src/devices/xunit
+      working-directory: src/devices/${{inputs.service_name}}
 
     - name: Set user and group to root
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         sudo chown -R root:root Publish
       shell: bash
-      working-directory: src/devices/xunit
+      working-directory: src/devices/${{inputs.service_name}}
 
     - name: Build deb package
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -137,7 +137,7 @@ runs:
       uses: jiro4989/build-deb-action@v2
       with:
         package: xunit
-        package_root: src/devices/xunit/Publish
+        package_root: src/devices/${{inputs.service_name}}/Publish
         maintainer: "Hectors-Welt GmbH"
         version: ${{ inputs.version }}
         arch: "armhf"
