@@ -27,8 +27,6 @@ on:
         required: true
       nexusAptDebianStaging:
         required: true
-      registry:
-        required: true
       packageRepoHost:
         required: true
       packageRepoUsername:
