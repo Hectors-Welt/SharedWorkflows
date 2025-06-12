@@ -1,0 +1,353 @@
+name: Build
+
+on:
+  workflow_call:
+    secrets:
+      nexusAptRepoHostPrerelease:
+        required: true  
+      nexusAptRepoHost:
+        required: true
+      packageRegistryToken:
+        required: true
+      nexusAptRepoUsername:
+        required: true
+      nexusAptRepoPassword:
+        required: true
+      nexusDockerUsername:
+        required: true
+      nexusDockerPassword:
+        required: true
+      dockerRepo:
+        required: true
+      nexusAptRepoHostStaging:
+        required: true
+      nexusAptDebian:
+        required: true
+      nexusAptDebianPre:
+        required: true
+      nexusAptDebianStaging:
+        required: true
+      registry:
+        required: true
+      packageRepoHost:
+        required: true
+      packageRepoUsername:
+        required: true
+      packageRepoPassword:
+        required: true
+      packageRepoPort:
+        required: true
+      hangfireFeedUrl:
+        required: true
+      hangfireUsername:
+        required: true
+      hangfirePassword:
+        required: true
+      nugetGithubHost:
+        required: true
+      nugetGithubUsername:
+        required: true  
+      nugetGithubPassword:
+        required: true  
+      githubToken:
+        required: true
+jobs:
+  build-and-publish:
+    outputs:
+      STAGING_RUN_NUMBER: ${{ steps.check_staging_tag.outputs.result }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Parse tag information
+        id: parse_tag
+        run: |
+          TAG="${GITHUB_REF##*/}"
+
+          # Regular expression to capture service name, environment, and version
+          if [[ "$TAG" =~ ^(.+)_(prerelease|staging|release)_([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            SERVICE_NAME="${BASH_REMATCH[1]}"
+            ENVIRONMENT="${BASH_REMATCH[2]}"
+            VERSION="${BASH_REMATCH[3]}"
+            
+            # Append GitHub run number to the version
+            VERSION_WITH_RUN_NUMBER="${VERSION}.${GITHUB_RUN_NUMBER}"
+
+            echo "Parsed tag information:"
+            echo "Service Name: $SERVICE_NAME"
+            echo "Environment: $ENVIRONMENT"
+            echo "Version: $VERSION_WITH_RUN_NUMBER"
+
+            echo "::set-output name=service_name::$SERVICE_NAME"
+            echo "::set-output name=environment::$ENVIRONMENT"
+            echo "::set-output name=base_version::$VERSION"
+            echo "::set-output name=version::$VERSION_WITH_RUN_NUMBER"
+          else
+            echo "Tag format is incorrect. Expected format: <service_name>_<environment>_<version>"
+            exit 1
+          fi
+
+      - name: If release tag, check if hotfix
+        if: ${{ steps.parse_tag.outputs.environment == 'release' }}
+        id: hotfix_check
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+        run: |
+
+          REPO="${{ github.repository }}"
+          GITHUB_TOKEN="${{ secrets.githubToken }}"
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+
+          # Split the tag into servicename, environment, and version
+          IFS='_' read -ra TAG_PARTS <<< "$CURRENT_TAG"
+          SERVICE_NAME=${TAG_PARTS[0]}
+          ENVIRONMENT=${TAG_PARTS[1]}
+          VERSION=${TAG_PARTS[2]}
+
+          # Split the version into major, minor, and patch
+          IFS='.' read -ra VERSION_PARTS <<< "$VERSION"
+          MAJOR=${VERSION_PARTS[0]}
+          MINOR=${VERSION_PARTS[1]}
+          PATCH=${VERSION_PARTS[2]}
+
+          echo "Service Name: $SERVICE_NAME"
+          echo "Environment: $ENVIRONMENT"
+          echo "Version: $VERSION"
+          echo "Major: $MAJOR"
+          echo "Minor: $MINOR"
+          echo "Patch: $PATCH"
+
+          if [ "$PATCH" -gt 0 ]; then
+            PATCH=$((PATCH-1))
+            HOTFIX_TAG="v$MAJOR.$MINOR.$PATCH"
+
+            TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
+
+            if echo $TAGS | jq -e --arg tag "refs/tags/$HOTFIX_TAG" '.[] | select(.ref == $tag)' > /dev/null; then
+              echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+              echo "::set-output name=result::true"
+            else
+              echo "HOTFIX_STATUS=false" >> $GITHUB_ENV
+              echo "::set-output name=result::false"            
+            fi
+          else
+            echo "HOTFIX_STATUS=false" >> $GITHUB_ENV
+            echo "::set-output name=result::false"
+          fi
+
+      - name: If release tag, check if staging tag exists and get run number
+        if: ${{( steps.parse_tag.outputs.environment == 'release')}}
+        id: check_staging_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.packageRegistryToken }}
+        run: |
+          TAG_VERSION=${{ steps.parse_tag.outputs.base_version }}
+          STAGING_TAG_NAME="${{ steps.parse_tag.outputs.service_name }}_staging_$TAG_VERSION"
+          REPO=${{ github.repository }}
+          API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
+          if [[ $API_RESPONSE == *"ref"* ]]; then
+              COMMIT_SHA=$(echo "$API_RESPONSE" | jq -r '.object.sha')
+              echo "commit sha $COMMIT_SHA"
+
+              # Get the actual commit sha (if annotated tag)
+              STAGING_TAG_API_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/tags/$COMMIT_SHA)
+              STAGING_COMMIT_SHA=$(echo "$STAGING_TAG_API_RESPONSE" | jq -r '.object.sha')
+              echo "staging commit sha $STAGING_COMMIT_SHA"
+
+              PAGE=1
+              RUN_NUMBER=""
+              while [[ -z "$RUN_NUMBER" ]]; do
+                RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$REPO/actions/runs?per_page=100&page=$PAGE")
+
+                MATCHING_RUN=$(echo "$RESPONSE" | jq -r '[.workflow_runs[] | select(.head_sha == "'$STAGING_COMMIT_SHA'" and .conclusion == "success" and .head_branch == "${{ steps.parse_tag.outputs.service_name }}_staging_${{steps.parse_tag.outputs.base_version}}")] | max_by(.run_number) // empty')
+                if [[ -n "$MATCHING_RUN" ]]; then
+                  RUN_NUMBER=$(echo "$MATCHING_RUN" | jq -r '.run_number')
+                  break
+                fi
+
+                # Stop if less than 100 runs returned (no more pages)
+                RUN_COUNT=$(echo "$RESPONSE" | jq '.workflow_runs | length')
+                if [[ "$RUN_COUNT" -lt 100 ]]; then
+                  break
+                fi
+
+                ((PAGE++))
+              done
+
+              if [[ -n "$RUN_NUMBER" ]]; then
+                if [[ "$RUN_NUMBER" == "null" ]]; then
+                  echo "No successful run found for the staging tag. Aborting"
+                  exit 1
+                fi
+                echo "run number $RUN_NUMBER"
+                echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
+                echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
+
+                STAGING_TAG=$(git tag --list '${{ steps.parse_tag.outputs.service_name }}_staging_*' --sort=-v:refname | head -n 1)
+                STAGING_TAG_VERSION=${STAGING_TAG#${{ steps.parse_tag.outputs.service_name }}_staging_}
+                echo "STAGING_TAG_VERSION=$STAGING_TAG_VERSION" >> $GITHUB_ENV
+                echo "::set-output name=result::$RUN_NUMBER"
+              else
+                echo "::set-output name=result::''"
+                echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
+              fi
+            else
+              echo "::set-output name=result::''"
+              echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
+            fi
+
+      - name: Check for build.json and extract targets
+        id: check_build_json
+        run: |
+          if [ -f src/apps/${{ steps.parse_tag.outputs.service_name }}/build.json ]; then
+            echo "build.json file found."
+              TARGETS=$(jq -r '.buildTargets[]' src/apps/${{ steps.parse_tag.outputs.service_name }}/build.json)
+            echo "Targets found: $TARGETS"
+            if echo "$TARGETS" | grep -q "docker"; then
+              echo "::set-output name=docker::true"
+            else
+              echo "::set-output name=docker::false"
+            fi
+            if echo "$TARGETS" | grep -q "linux"; then
+              echo "::set-output name=linux::true"
+            else
+              echo "::set-output name=linux::false"
+            fi
+            if echo "$TARGETS" | grep -q "windows"; then
+              echo "::set-output name=windows::true"
+            else
+              echo "::set-output name=windows::false"
+            fi
+            if echo "$TARGETS" | grep -q "xUnit"; then
+              echo "::set-output name=xUnit::true"
+            else
+              echo "::set-output name=xUnit::false"
+            fi
+          elif [ -f src/devices/${{ steps.parse_tag.outputs.service_name }}/build.json ]; then
+            echo "build.json file found."
+            TARGETS=$(jq -r '.buildTargets[]' src/devices/${{ steps.parse_tag.outputs.service_name }}/build.json)
+            echo "Targets found: $TARGETS"
+            if echo "$TARGETS" | grep -q "docker"; then
+              echo "::set-output name=docker::true"
+            else
+              echo "::set-output name=docker::false"
+            fi
+            if echo "$TARGETS" | grep -q "linux"; then
+              echo "::set-output name=linux::true"
+            else
+              echo "::set-output name=linux::false"
+            fi
+            if echo "$TARGETS" | grep -q "windows"; then
+              echo "::set-output name=windows::true"
+            else
+              echo "::set-output name=windows::false"
+            fi
+            if echo "$TARGETS" | grep -q "xUnit"; then
+              echo "::set-output name=xUnit::true"
+            else
+              echo "::set-output name=xUnit::false"
+            fi
+          elif [ -z "$TARGETS" ]; then
+            echo "No build.json file found, defaulting to all targets."
+            echo "::set-output name=docker::true"
+            echo "::set-output name=linux::true"
+            echo "::set-output name=windows::true"
+            echo "::set-output name=xUnit::false"
+          fi
+        shell: bash
+  
+      - name: Build dotnet service
+        if: ${{ (( steps.parse_tag.outputs.environment != 'release' || ( steps.parse_tag.outputs.environment == 'release' && steps.hotfix_check.outputs.HOTFIX_STATUS == 'true')))  &&  steps.check_build_json.outputs.xUnit == 'false' }}
+        uses: Hectors-Welt/SharedWorkflows/.github/actions/build-dotnet-service@main
+        with:
+          service_name: ${{ steps.parse_tag.outputs.service_name }}
+          version: ${{ steps.parse_tag.outputs.version }}
+          dotnet_version: '8'
+          nuget_github_host: ${{ secrets.nugetGithubHost }}
+          nuget_github_username: ${{ secrets.nugetGithubUsername }}
+          nuget_github_password: ${{ secrets.nugetGithubPassword }}
+          hangfire_feed_url: ${{ secrets.hangfireFeedUrl }}
+          hangfire_username: ${{ secrets.hangfireUsername }}
+          hangfire_password: ${{ secrets.hangfirePassword }}
+
+      - name: Build and publish zip package
+        uses: Hectors-Welt/SharedWorkflows/.github/actions/dotnet-build-and-publish-zip@main
+        if: ${{ steps.check_build_json.outputs.windows == 'true' }}
+        with:
+          service_name: ${{ steps.parse_tag.outputs.service_name }}
+          environment: ${{ steps.parse_tag.outputs.environment }}
+          version: ${{ steps.parse_tag.outputs.version }}
+          base_version: ${{ steps.parse_tag.outputs.base_version }}
+          nexus_apt_repo_host_prerelease: ${{ secrets.nexusAptRepoHostPrerelease }}
+          nexus_apt_repo_host_staging: ${{ secrets.nexusAptRepoHostStaging }}
+          nexus_apt_repo_host: ${{ secrets.nexusAptRepoHost }}
+          nexus_apt_repo_username: ${{ secrets.nexusAptRepoUsername }}
+          nexus_apt_repo_password: ${{ secrets.nexusAptRepoPassword }}
+          package_registry_token: ${{ secrets.packageRegistryToken }}
+          staging_run_number: ${{ steps.check_staging_tag.outputs.result }}
+          is_hotfix: ${{ steps.hotfix_check.outputs.HOTFIX_STATUS }}
+          package_repo_username: ${{ secrets.packageRepoUsername }}
+          package_repo_password: ${{ secrets.packageRepoPassword }}
+          package_repo_host: ${{ secrets.packageRepoHost }}
+          package_repo_port: ${{ secrets.packageRepoPort }}
+
+      - name: Build debian and publish debian package
+        uses: Hectors-Welt/SharedWorkflows/.github/actions/dotnet-build-and-publish-debian@main
+        if: ${{ steps.check_build_json.outputs.linux == 'true' }}
+        with:
+          service_name: ${{ steps.parse_tag.outputs.service_name }}
+          environment: ${{ steps.parse_tag.outputs.environment }}
+          version: ${{ steps.parse_tag.outputs.version }}
+          base_version: ${{ steps.parse_tag.outputs.base_version }}
+          nexus_apt_repo_host_prerelease: ${{ secrets.nexusAptRepoHostPrerelease }}
+          nexus_apt_repo_host_staging: ${{ secrets.nexusAptRepoHostStaging }}
+          nexus_apt_repo_host: ${{ secrets.nexusAptRepoHost }}
+          nexus_apt_repo_username: ${{ secrets.nexusAptRepoUsername }}
+          nexus_apt_repo_password: ${{ secrets.nexusAptRepoPassword }}
+          package_registry_token: ${{ secrets.packageRegistryToken }}
+          staging_run_number: ${{ steps.check_staging_tag.outputs.result }}
+          is_hotfix: ${{ steps.hotfix_check.outputs.HOTFIX_STATUS }}
+
+      - name: Build Docker image
+        if: ${{ steps.check_build_json.outputs.docker == 'true' }}
+        uses: Hectors-Welt/SharedWorkflows/.github/actions/dotnet-build-and-publish-docker-image@main
+        with:
+          service_name: ${{ steps.parse_tag.outputs.service_name }}
+          environment: ${{ steps.parse_tag.outputs.environment }}
+          version: ${{ steps.parse_tag.outputs.version }}
+          base_version: ${{ steps.parse_tag.outputs.base_version }}
+          nexus_docker_username: ${{ secrets.nexusDockerUsername }}
+          nexus_docker_password: ${{ secrets.nexusDockerPassword }}
+          docker_registry: ${{ secrets.dockerRepo }}
+          staging_run_number: ${{ steps.check_staging_tag.outputs.STAGING_RUN_NUMBER }}
+          nuget_github_host: ${{ secrets.nugetGithubHost }}
+          nuget_github_username: ${{ secrets.nugetGithubUsername }}
+          nuget_github_password: ${{ secrets.nugetGithubPassword }}
+          hangfire_feed_url: ${{ secrets.hangfireFeedUrl }}
+          hangfire_username: ${{ secrets.hangfireUsername }}
+          hangfire_password: ${{ secrets.hangfirePassword }}
+          
+      - name: Build xUnit package
+        if: ${{ steps.check_build_json.outputs.xUnit == 'true' }}
+        uses: Hectors-Welt/SharedWorkflows/.github/actions/dotnet-build-and-publish-xUnit@main
+        with:
+          service_name: ${{ steps.parse_tag.outputs.service_name }}
+          environment: ${{ steps.parse_tag.outputs.environment }}
+          version: ${{ steps.parse_tag.outputs.version }}
+          base_version: ${{ steps.parse_tag.outputs.base_version }}
+          nexus_apt_repo_username: ${{ secrets.nexusAptRepoUsername }}
+          nexus_apt_repo_password: ${{ secrets.nexusAptRepoPassword }}          
+          nexus_apt_debian: ${{ secrets.nexusAptDebian }}
+          nexus_apt_debian_pre: ${{ secrets.nexusAptDebianPre }}
+          nexus_apt_debian_staging: ${{ secrets.nexusAptDebianStaging }}
+          staging_run_number: ${{ steps.check_staging_tag.outputs.STAGING_RUN_NUMBER }}
+          nuget_github_host: ${{ secrets.nugetGithubHost }}
+          nuget_github_username: ${{ secrets.nugetGithubUsername }}
+          nuget_github_password: ${{ secrets.nugetGithubPassword }}
+          is_hotfix: ${{ steps.hotfix_check.outputs.HOTFIX_STATUS }}
+
+          
+          
