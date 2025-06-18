@@ -67,7 +67,7 @@ runs:
     - name: Publish service
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: >
-        dotnet publish ${{inputs.service_name}}.csproj --configuration Release --output Publish/opt/hector/xunit
+        dotnet publish ${{inputs.service_name}}.csproj --configuration Release --output Publish/opt/hector/${{ inputs.service_name }}
         -r linux-arm --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
       shell: bash
       working-directory: src/devices/${{inputs.service_name}}
@@ -83,15 +83,15 @@ runs:
     - name: Create systemd unit
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
-        cat << EOF > Publish/etc/systemd/system/xunit.service
+        cat << EOF > Publish/etc/systemd/system/${{ inputs.service_name }}.service
         [Unit]
-        Description=Hector xunit
+        Description=Hector ${{ inputs.service_name }}
         After=network-online.target
         Requires=network-online.target
 
         [Service]
-        WorkingDirectory=/opt/hector/xunit
-        ExecStart=/opt/hector/xunit/xunit
+        WorkingDirectory=/opt/hector/${{ inputs.service_name }}
+        ExecStart=/opt/hector/${{ inputs.service_name }}/${{ inputs.service_name }}
         TimeoutStopSec=1
         Restart=always
         RestartSec=5
@@ -107,7 +107,7 @@ runs:
       run: |
         cat << EOF > Publish/DEBIAN/postinst
         #!/bin/sh
-        systemctl enable xunit.service --now
+        systemctl enable ${{ inputs.service_name }}.service --now
         EOF
         chmod 755 Publish/DEBIAN/postinst
       shell: bash
@@ -118,7 +118,7 @@ runs:
       run: |
         cat << EOF > Publish/DEBIAN/prerm
         #!/bin/sh
-        systemctl disable xunit.service --now
+        systemctl disable ${{ inputs.service_name }}.service --now
         EOF
         chmod 755 Publish/DEBIAN/prerm
       shell: bash
@@ -136,18 +136,18 @@ runs:
       id: package
       uses: jiro4989/build-deb-action@v2
       with:
-        package: xunit
+        package: ${{ inputs.service_name }}
         package_root: src/devices/${{inputs.service_name}}/Publish
         maintainer: "Hectors-Welt GmbH"
         version: ${{ inputs.version }}
         arch: "armhf"
-        desc: Hector xunit
+        desc: Hector ${{ inputs.service_name }}
 
     - name: Get package binarys from staging repo
       if: ${{ (inputs.environment == 'release'  &&  inputs.is_hotfix  == 'false') }}
       id: debian_package
       run: |
-        curl --fail ${{ inputs.nexus_apt_debian_staging }}pool/x/xunit/xunit_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb --output xunit_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb
+        curl --fail ${{ inputs.nexus_apt_debian_staging }}pool/x/${{ inputs.service_name }}/${{ inputs.service_name }}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb --output ${{ inputs.service_name }}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb
       shell: bash
 
     - name: Package and Publish to Nexus
@@ -155,7 +155,7 @@ runs:
         if [[ "${{ inputs.environment }}" == "release" ]]; then
           if [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == false  ]]; then
             REPO_URL="${{ inputs.nexus_apt_debian }}"
-            DEB_FILE="xunit_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb"
+            DEB_FILE="${{ inputs.service_name }}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb"
           elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == true ]]; then
             REPO_URL="${{ inputs.nexus_apt_debian }}"
             DEB_FILE="${{ steps.package.outputs.file_name }}"
