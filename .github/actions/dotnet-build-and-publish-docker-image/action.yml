@@ -86,6 +86,13 @@ runs:
         echo "Dockerfile created"
       shell: bash
 
+    - name: Get servicename to lowercase
+      id: toLowerCase
+      run: |
+        INPUT=${{ inputs.service_name }}
+        echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT
+      shell: bash
+
     - name: Get image path
       id: imagepath
       run: |
@@ -111,13 +118,6 @@ runs:
           latest=false
         tags: |
           type=ref,event=tag
-
-    - name: Get servicename to lowercase
-      id: toLowerCase
-      run: |
-        INPUT=${{ inputs.service_name }}
-        echo "lowerCaseValue=${INPUT,,}" >> $GITHUB_OUTPUT
-      shell: bash
 
     - name: Build and push Docker image
       if: ${{ ( inputs.environment == 'release' ) }}
