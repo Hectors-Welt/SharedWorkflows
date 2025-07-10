@@ -205,8 +205,10 @@ jobs:
         run: |
           if [ -d "src/apps/${{ steps.parse_tag.outputs.service_name }}" ]; then
             echo "service_path=src/apps/${{ steps.parse_tag.outputs.service_name }}" >> $GITHUB_OUTPUT
+            echo "Service directory found at src/apps/${{ steps.parse_tag.outputs.service_name }}"
           elif [ -d "src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}" ]; then
             echo "service_path=src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}" >> $GITHUB_OUTPUT
+            echo "Service directory found at src/apps/${{ steps.parse_tag.outputs.service_name }}"
           else
             echo "Service directory not found!" >&2
             exit 1
