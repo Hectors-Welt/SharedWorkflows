@@ -102,7 +102,7 @@ runs:
         REG="${{ inputs.docker_registry }}"
         if [[ "$DIR" == *AdminCenter* ]]; then
           echo "image_path=${REG}/admincenter/${SERVICE}" >> $GITHUB_OUTPUT
-          echo "image_path_to_lowerh=${REG}/admincenter/${SERVICE_TO_LOWER}" >> $GITHUB_OUTPUT
+          echo "image_path_to_lower=${REG}/admincenter/${SERVICE_TO_LOWER}" >> $GITHUB_OUTPUT
         else
           echo "image_path=${REG}/${SERVICE}" >> $GITHUB_OUTPUT
           echo "image_path_to_lower=${REG}/${SERVICE_TO_LOWER}" >> $GITHUB_OUTPUT
