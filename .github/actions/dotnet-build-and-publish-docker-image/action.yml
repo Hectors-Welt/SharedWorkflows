@@ -90,20 +90,6 @@ runs:
       id: imagepath
       run: |
         DIR="${{ inputs.working_directory }}"
-        SERVICE="${{ inputs.service_name }}"
-        REG="${{ inputs.docker_registry }}"
-        if [[ "$DIR" == *AdminCenter* ]]; then
-          # AdminCenter zu Kleinbuchstaben und ohne r am Ende (wie im Beispiel)
-          echo "image_path=${REG}/admincente/${SERVICE}" >> $GITHUB_OUTPUT
-        else
-          echo "image_path=${REG}/${SERVICE}" >> $GITHUB_OUTPUT
-        fi
-      shell: bash
-
-    - name: Get image path
-      id: imagepath
-      run: |
-        DIR="${{ inputs.working_directory }}"
         SERVICE="${{inputs.service_name}}"
         SERVICE_TO_LOWER="${{steps.toLowerCase.outputs.lowerCaseValue}}"
         REG="${{ inputs.docker_registry }}"
