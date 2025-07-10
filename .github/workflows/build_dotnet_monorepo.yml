@@ -320,7 +320,7 @@ jobs:
           nexus_docker_username: ${{ secrets.nexusDockerUsername }}
           nexus_docker_password: ${{ secrets.nexusDockerPassword }}
           docker_registry: ${{ secrets.dockerRepo }}
-          staging_run_number: ${{ steps.check_staging_tag.outputs.STAGING_RUN_NUMBER }}
+          staging_run_number: ${{ steps.check_staging_tag.outputs.result }}
           nuget_github_host: ${{ secrets.nugetGithubHost }}
           nuget_github_username: ${{ secrets.nugetGithubUsername }}
           nuget_github_password: ${{ secrets.nugetGithubPassword }}
@@ -341,7 +341,7 @@ jobs:
           nexus_apt_debian: ${{ secrets.nexusAptDebian }}
           nexus_apt_debian_pre: ${{ secrets.nexusAptDebianPre }}
           nexus_apt_debian_staging: ${{ secrets.nexusAptDebianStaging }}
-          staging_run_number: ${{ steps.check_staging_tag.outputs.STAGING_RUN_NUMBER }}
+          staging_run_number: ${{ steps.check_staging_tag.outputs.result }}
           nuget_github_host: ${{ secrets.nugetGithubHost }}
           nuget_github_username: ${{ secrets.nugetGithubUsername }}
           nuget_github_password: ${{ secrets.nugetGithubPassword }}
