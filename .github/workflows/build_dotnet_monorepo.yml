@@ -87,6 +87,7 @@ jobs:
             echo "Tag format is incorrect. Expected format: <service_name>_<environment>_<version>"
             exit 1
           fi
+        shell: bash
 
       - name: If release tag, check if hotfix
         if: ${{ steps.parse_tag.outputs.environment == 'release' }}
@@ -135,6 +136,7 @@ jobs:
             echo "HOTFIX_STATUS=false" >> $GITHUB_ENV
             echo "::set-output name=result::false"
           fi
+        shell: bash
 
       - name: If release tag, check if staging tag exists and get run number
         if: ${{( steps.parse_tag.outputs.environment == 'release')}}
@@ -196,60 +198,43 @@ jobs:
               echo "::set-output name=result::''"
               echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
             fi
+        shell: bash
+
+      - name: Locate service directory
+        id: find_service_dir
+        run: |
+          if [ -d "src/apps/${{ inputs.service_name }}" ]; then
+            echo "service_path=src/apps/${{ inputs.service_name }}" >> $GITHUB_OUTPUT
+          elif [ -d "src/apps/AdminCenter/${{ inputs.service_name }}" ]; then
+            echo "service_path=src/apps/AdminCenter/${{ inputs.service_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "Service directory not found!" >&2
+            exit 1
+          fi
+        shell: bash
 
       - name: Check for build.json and extract targets
         id: check_build_json
         run: |
-          if [ -f src/apps/${{ steps.parse_tag.outputs.service_name }}/build.json ]; then
-            echo "build.json file found."
-              TARGETS=$(jq -r '.buildTargets[]' src/apps/${{ steps.parse_tag.outputs.service_name }}/build.json)
+          BASE_PATH=""
+
+          if [ -f ${{steps.find_service_dir.outputs.service_path}}/${{ steps.parse_tag.outputs.service_name }}/build.json ]; then
+            BASE_PATH="${{steps.find_service_dir.outputs.service_path}}/${{ steps.parse_tag.outputs.service_name }}"
+          elif [ -f src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}/build.json ]; then
+            BASE_PATH="src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}"
+          fi
+
+          if [ -n "$BASE_PATH" ]; then
+            echo "build.json found at: $BASE_PATH"
+            TARGETS=$(jq -r '.buildTargets[]' "$BASE_PATH/build.json")
             echo "Targets found: $TARGETS"
-            if echo "$TARGETS" | grep -q "docker"; then
-              echo "::set-output name=docker::true"
-            else
-              echo "::set-output name=docker::false"
-            fi
-            if echo "$TARGETS" | grep -q "linux"; then
-              echo "::set-output name=linux::true"
-            else
-              echo "::set-output name=linux::false"
-            fi
-            if echo "$TARGETS" | grep -q "windows"; then
-              echo "::set-output name=windows::true"
-            else
-              echo "::set-output name=windows::false"
-            fi
-            if echo "$TARGETS" | grep -q "xUnit"; then
-              echo "::set-output name=xUnit::true"
-            else
-              echo "::set-output name=xUnit::false"
-            fi
-          elif [ -f src/devices/${{ steps.parse_tag.outputs.service_name }}/build.json ]; then
-            echo "build.json file found."
-            TARGETS=$(jq -r '.buildTargets[]' src/devices/${{ steps.parse_tag.outputs.service_name }}/build.json)
-            echo "Targets found: $TARGETS"
-            if echo "$TARGETS" | grep -q "docker"; then
-              echo "::set-output name=docker::true"
-            else
-              echo "::set-output name=docker::false"
-            fi
-            if echo "$TARGETS" | grep -q "linux"; then
-              echo "::set-output name=linux::true"
-            else
-              echo "::set-output name=linux::false"
-            fi
-            if echo "$TARGETS" | grep -q "windows"; then
-              echo "::set-output name=windows::true"
-            else
-              echo "::set-output name=windows::false"
-            fi
-            if echo "$TARGETS" | grep -q "xUnit"; then
-              echo "::set-output name=xUnit::true"
-            else
-              echo "::set-output name=xUnit::false"
-            fi
-          elif [ -z "$TARGETS" ]; then
-            echo "No build.json file found, defaulting to all targets."
+
+            echo "::set-output name=docker::$(echo "$TARGETS" | grep -q "docker" && echo true || echo false)"
+            echo "::set-output name=linux::$(echo "$TARGETS" | grep -q "linux" && echo true || echo false)"
+            echo "::set-output name=windows::$(echo "$TARGETS" | grep -q "windows" && echo true || echo false)"
+            echo "::set-output name=xUnit::$(echo "$TARGETS" | grep -q "xUnit" && echo true || echo false)"
+          else
+            echo "No build.json found, defaulting to all targets."
             echo "::set-output name=docker::true"
             echo "::set-output name=linux::true"
             echo "::set-output name=windows::true"
@@ -270,6 +255,7 @@ jobs:
           hangfire_feed_url: ${{ secrets.hangfireFeedUrl }}
           hangfire_username: ${{ secrets.hangfireUsername }}
           hangfire_password: ${{ secrets.hangfirePassword }}
+          working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
 
       - name: Build and publish zip package
         uses: Hectors-Welt/SharedWorkflows/.github/actions/dotnet-build-and-publish-zip@main
@@ -291,6 +277,7 @@ jobs:
           package_repo_password: ${{ secrets.packageRepoPassword }}
           package_repo_host: ${{ secrets.packageRepoHost }}
           package_repo_port: ${{ secrets.packageRepoPort }}
+          working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
 
       - name: Build debian and publish debian package
         uses: Hectors-Welt/SharedWorkflows/.github/actions/dotnet-build-and-publish-debian@main
@@ -308,6 +295,7 @@ jobs:
           package_registry_token: ${{ secrets.packageRegistryToken }}
           staging_run_number: ${{ steps.check_staging_tag.outputs.result }}
           is_hotfix: ${{ steps.hotfix_check.outputs.HOTFIX_STATUS }}
+          working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
 
       - name: Build Docker image
         if: ${{ steps.check_build_json.outputs.docker == 'true' }}
@@ -327,6 +315,7 @@ jobs:
           hangfire_feed_url: ${{ secrets.hangfireFeedUrl }}
           hangfire_username: ${{ secrets.hangfireUsername }}
           hangfire_password: ${{ secrets.hangfirePassword }}
+          working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
           
       - name: Build xUnit package
         if: ${{ steps.check_build_json.outputs.xUnit == 'true' }}
@@ -346,6 +335,7 @@ jobs:
           nuget_github_username: ${{ secrets.nugetGithubUsername }}
           nuget_github_password: ${{ secrets.nugetGithubPassword }}
           is_hotfix: ${{ steps.hotfix_check.outputs.HOTFIX_STATUS }}
+          working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
 
           
           

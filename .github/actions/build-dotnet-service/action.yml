@@ -1,37 +1,40 @@
-name: 'Build dotnet service'
-description: 'Adds the NuGet feeds and builds the service'
+name: "Build dotnet service"
+description: "Adds the NuGet feeds and builds the service"
 
 inputs:
   service_name:
-    description: 'The name of the service'
+    description: "The name of the service"
     required: true
   version:
-    description: 'The version'
+    description: "The version"
     required: true
-  dotnet_version: 
-    description: 'The version of .NET Core to use'
+  dotnet_version:
+    description: "The version of .NET Core to use"
     required: true
-  nuget_github_host:  
-    description: 'The GitHub NuGet host'
+  nuget_github_host:
+    description: "The GitHub NuGet host"
     required: true
   nuget_github_username:
-    description: 'The GitHub NuGet username'
+    description: "The GitHub NuGet username"
     required: true
   nuget_github_password:
-    description: 'The GitHub NuGet password'
+    description: "The GitHub NuGet password"
     required: true
   hangfire_feed_url:
-    description: 'The Hangfire feed URL'
+    description: "The Hangfire feed URL"
     required: true
   hangfire_username:
-    description: 'The Hangfire username'
+    description: "The Hangfire username"
     required: true
   hangfire_password:
-    description: 'The Hangfire password'
+    description: "The Hangfire password"
+    required: true
+  working_directory:
+    description: "The working directory for the service"
     required: true
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
@@ -44,4 +47,4 @@ runs:
         dotnet nuget add source ${{ inputs.hangfire_feed_url }} --name hangfirePro --username ${{ inputs.hangfire_username }} --password ${{ inputs.hangfire_password }} --store-password-in-clear-text
         dotnet restore
       shell: bash
-      working-directory: src/apps/${{ inputs.service_name }}
+      working-directory: ${{ inputs.working_directory }}

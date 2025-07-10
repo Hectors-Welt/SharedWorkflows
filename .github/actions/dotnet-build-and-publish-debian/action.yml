@@ -38,6 +38,9 @@ inputs:
   is_hotfix:
     description: "Is this a hotfix?"
     required: true
+  working_directory:
+    description: "The working directory for the service"
+    required: true
 
 runs:
   using: "composite"
@@ -48,7 +51,7 @@ runs:
         dotnet publish ${{ inputs.service_name }}.csproj --configuration Release --output Publish/opt/hector/${{ inputs.service_name }}
         -r linux-x64 --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
       shell: bash
-      working-directory: src/apps/${{ inputs.service_name }}
+      working-directory: ${{ inputs.working_directory }}
 
     - name: If no 'v' tag, create file paths
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -56,7 +59,7 @@ runs:
         mkdir -p Publish/etc/systemd/system/
         mkdir Publish/DEBIAN
       shell: bash
-      working-directory: src/apps/${{ inputs.service_name }}
+      working-directory: ${{ inputs.working_directory }}
 
     - name: If no 'v' tag, create systemd unit
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -79,7 +82,7 @@ runs:
         WantedBy=multi-user.target
         EOF
       shell: bash
-      working-directory: src/apps/${{ inputs.service_name }}
+      working-directory: ${{ inputs.working_directory }}
 
     - name: If no 'v' tag, create postinstall script
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -90,7 +93,7 @@ runs:
         EOF
         chmod 755 Publish/DEBIAN/postinst
       shell: bash
-      working-directory: src/apps/${{ inputs.service_name }}
+      working-directory: ${{ inputs.working_directory }}
 
     - name: If no 'v' tag, create preremove script
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -101,14 +104,14 @@ runs:
         EOF
         chmod 755 Publish/DEBIAN/prerm
       shell: bash
-      working-directory: src/apps/${{ inputs.service_name }}
+      working-directory: ${{ inputs.working_directory }}
 
     - name: If no 'v' tag, set user and group to root
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
         sudo chown -R root:root Publish
       shell: bash
-      working-directory: src/apps/${{ inputs.service_name }}
+      working-directory: ${{ inputs.working_directory }}
 
     - name: If no 'v' tag, build deb package
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
@@ -116,7 +119,7 @@ runs:
       uses: jiro4989/build-deb-action@v2
       with:
         package: ${{ inputs.service_name }}
-        package_root: src/apps/${{ inputs.service_name }}/Publish
+        package_root: ${{ inputs.working_directory }}/Publish
         maintainer: "Hectors-Welt GmbH"
         version: ${{ inputs.version }}
         arch: "amd64"
@@ -156,5 +159,4 @@ runs:
           -H "Content-Type: multipart/form-data" \
           --data-binary "@$DEB_FILE" \
           "$REPO_URL"
-
       shell: bash
