@@ -203,10 +203,10 @@ jobs:
       - name: Locate service directory
         id: find_service_dir
         run: |
-          if [ -d "src/apps/${{ inputs.service_name }}" ]; then
-            echo "service_path=src/apps/${{ inputs.service_name }}" >> $GITHUB_OUTPUT
-          elif [ -d "src/apps/AdminCenter/${{ inputs.service_name }}" ]; then
-            echo "service_path=src/apps/AdminCenter/${{ inputs.service_name }}" >> $GITHUB_OUTPUT
+          if [ -d "src/apps/${{ steps.parse_tag.outputs.service_name }}" ]; then
+            echo "service_path=src/apps/${{ steps.parse_tag.outputs.service_name }}" >> $GITHUB_OUTPUT
+          elif [ -d "src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}" ]; then
+            echo "service_path=src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}" >> $GITHUB_OUTPUT
           else
             echo "Service directory not found!" >&2
             exit 1
