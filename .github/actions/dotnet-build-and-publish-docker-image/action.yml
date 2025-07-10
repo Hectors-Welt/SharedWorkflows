@@ -86,11 +86,41 @@ runs:
         echo "Dockerfile created"
       shell: bash
 
+    - name: Get image path
+      id: imagepath
+      run: |
+        DIR="${{ inputs.working_directory }}"
+        SERVICE="${{ inputs.service_name }}"
+        REG="${{ inputs.docker_registry }}"
+        if [[ "$DIR" == *AdminCenter* ]]; then
+          # AdminCenter zu Kleinbuchstaben und ohne r am Ende (wie im Beispiel)
+          echo "image_path=${REG}/admincente/${SERVICE}" >> $GITHUB_OUTPUT
+        else
+          echo "image_path=${REG}/${SERVICE}" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+
+    - name: Get image path
+      id: imagepath
+      run: |
+        DIR="${{ inputs.working_directory }}"
+        SERVICE="${{inputs.service_name}}"
+        SERVICE_TO_LOWER="${{steps.toLowerCase.outputs.lowerCaseValue}}"
+        REG="${{ inputs.docker_registry }}"
+        if [[ "$DIR" == *AdminCenter* ]]; then
+          echo "image_path=${REG}/admincenter/${SERVICE}" >> $GITHUB_OUTPUT
+          echo "image_path_to_lowerh=${REG}/admincenter/${SERVICE_TO_LOWER}" >> $GITHUB_OUTPUT
+        else
+          echo "image_path=${REG}/${SERVICE}" >> $GITHUB_OUTPUT
+          echo "image_path_to_lower=${REG}/${SERVICE_TO_LOWER}" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+
     - name: Extract metadata (tags, labels) for Docker
       id: meta
       uses: docker/metadata-action@v2
       with:
-        images: ${{ inputs.docker_registry }}/${{ inputs.service_name }}
+        images: ${{ steps.imagepath.outputs.image_path }}
         flavor: |
           latest=false
         tags: |
@@ -111,7 +141,7 @@ runs:
         build-args: |
           SERVICE=${{ inputs.service_name }}
         push: true
-        tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:release
+        tags: ${{ steps.meta.outputs.tags }},  ${{ steps.imagepath.outputs.image_path_to_lower }}:release
         labels: ${{ steps.meta.outputs.labels }}
         file: ./${{ inputs.working_directory }}/Dockerfile
 
@@ -123,7 +153,7 @@ runs:
         build-args: |
           SERVICE=${{ inputs.service_name }}
         push: true
-        tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:staging
+        tags: ${{ steps.meta.outputs.tags }},  ${{ steps.imagepath.outputs.image_path_to_lower }}:staging
         labels: ${{ steps.meta.outputs.labels }}
         file: ./${{ inputs.working_directory }}/Dockerfile
 
@@ -135,6 +165,6 @@ runs:
         build-args: |
           SERVICE=${{ inputs.service_name }}
         push: true
-        tags: ${{ steps.meta.outputs.tags }}, ${{ inputs.docker_registry }}/${{steps.toLowerCase.outputs.lowerCaseValue}}:prerelease
+        tags: ${{ steps.meta.outputs.tags }},  ${{ steps.imagepath.outputs.image_path_to_lower }}:prerelease
         labels: ${{ steps.meta.outputs.labels }}
         file: ./${{ inputs.working_directory }}/Dockerfile
