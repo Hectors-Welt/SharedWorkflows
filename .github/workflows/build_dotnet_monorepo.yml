@@ -223,7 +223,7 @@ jobs:
         run: |
           BASE_PATH=""
 
-          if [ -f ${{steps.find_service_dir.outputs.service_path}}/${{ steps.parse_tag.outputs.service_name }}/build.json ]; then
+          if [ -f ${{steps.find_service_dir.outputs.service_path}}/build.json ]; then
             BASE_PATH="${{steps.find_service_dir.outputs.service_path}}/${{ steps.parse_tag.outputs.service_name }}"
           elif [ -f src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}/build.json ]; then
             BASE_PATH="src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}"
