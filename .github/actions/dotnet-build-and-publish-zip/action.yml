@@ -63,20 +63,20 @@ runs:
         dotnet publish ${{ inputs.service_name }}.csproj --configuration Release --output Publish-Zip
         -r win-x64 --self-contained true /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
       shell: bash
-      working-directory: ${{ inputs.working_directory }}
+      working-directory: src/apps/${{ inputs.service_name }}
     
     - name: If no 'v' tag, zip build results
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: cd ./Publish-Zip; zip -r ${{ inputs.service_name }}-${{ inputs.version }}.zip .
       shell: bash
-      working-directory: ${{ inputs.working_directory }}
+      working-directory: src/apps/${{ inputs.service_name }}
 
     - name: If 'v' tag, zip build results
       if: ${{ (inputs.environment == 'release'  &&   (inputs.is_hotfix  == 'false' || inputs.is_hotfix == '') ) }}
       run: |
         curl -u "${{ inputs.package_repo_username }}:${{ inputs.package_repo_password }}" ${{ inputs.package_repo_host }}/staging/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip --output ${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip
       shell: bash
-      working-directory: ${{ inputs.working_directory }}
+      working-directory: src/apps/${{ inputs.service_name }}
 
     # - name: Publish-Zip zip to Nexus
     #   run: |
@@ -107,7 +107,7 @@ runs:
         username: ${{ inputs.package_repo_username }}
         password: ${{ inputs.package_repo_password }}
         port: ${{ inputs.package_repo_port }}
-        source: ${{ inputs.working_directory }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip
+        source: src/apps/${{ inputs.service_name }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip
         target: staging/${{ inputs.service_name }}
         strip_components: 4
 
@@ -119,7 +119,7 @@ runs:
         username: ${{ inputs.package_repo_username }}
         password: ${{ inputs.package_repo_password }}
         port: ${{ inputs.package_repo_port }}
-        source: ${{ inputs.working_directory }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip
+        source: src/apps/${{ inputs.service_name }}/${{ inputs.service_name }}-${{ inputs.base_version }}.${{inputs.staging_run_number}}.zip
         target: release/${{ inputs.service_name }}
         strip_components: 3
 
@@ -131,7 +131,7 @@ runs:
         username: ${{ inputs.package_repo_username }}
         password: ${{ inputs.package_repo_password }}
         port: ${{ inputs.package_repo_port }}
-        source: ${{ inputs.working_directory }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip
+        source: src/apps/${{ inputs.service_name }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip
         target: release/${{ inputs.service_name }}
         strip_components: 4
     #   - name: copy file via ssh password to release repo
@@ -154,6 +154,6 @@ runs:
         username: ${{ inputs.package_repo_username }}
         password: ${{ inputs.package_repo_password }}
         port: ${{ inputs.package_repo_port}}
-        source: ${{ inputs.working_directory }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip
+        source: src/apps/${{ inputs.service_name }}/Publish-Zip/${{ inputs.service_name }}-${{ inputs.version }}.zip
         target: prerelease/${{ inputs.service_name }}
         strip_components: 4
