@@ -59,7 +59,7 @@ runs:
         password: ${{ inputs.nexus_docker_password }}
 
     - name: create docker file
-      working-directory: ./${{ inputs.working_directory }}
+      working-directory: ./src/apps/${{ inputs.service_name }}
       run: |
         cat <<EOF >Dockerfile
         FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
@@ -68,13 +68,13 @@ runs:
         FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
         COPY ./ .
         RUN ls -al
-        WORKDIR "/${{ inputs.working_directory }}/."
+        WORKDIR "/src/apps/${{ inputs.service_name }}/."
         RUN dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
-        WORKDIR "/${{ inputs.working_directory }}/."
+        WORKDIR "/src/apps/${{ inputs.service_name }}/."
         RUN dotnet nuget add source ${{ inputs.hangfire_feed_url }} --name hangfirePro --username ${{ inputs.hangfire_username }} --password ${{ inputs.hangfire_password }} --store-password-in-clear-text
-        WORKDIR "/${{ inputs.working_directory }}/."
+        WORKDIR "/src/apps/${{ inputs.service_name }}/."
         RUN dotnet restore
-        WORKDIR "/${{ inputs.working_directory }}/."
+        WORKDIR "/src/apps/${{ inputs.service_name }}/."
         RUN dotnet build "${{ inputs.service_name }}.csproj" -c Release -o /app/build
         FROM build AS publish
         RUN dotnet publish "${{ inputs.service_name }}.csproj" -c Release -o /app/publish /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
@@ -96,7 +96,7 @@ runs:
     - name: Get image path
       id: imagepath
       run: |
-        DIR="${{ inputs.working_directory }}"
+        DIR="src/apps/${{ inputs.service_name }}"
         SERVICE="${{inputs.service_name}}"
         SERVICE_TO_LOWER="${{steps.toLowerCase.outputs.lowerCaseValue}}"
         REG="${{ inputs.docker_registry }}"
@@ -129,7 +129,7 @@ runs:
         push: true
         tags: ${{ steps.meta.outputs.tags }},  ${{ steps.imagepath.outputs.image_path_to_lower }}:release
         labels: ${{ steps.meta.outputs.labels }}
-        file: ./${{ inputs.working_directory }}/Dockerfile
+        file: ./src/apps/${{ inputs.service_name }}/Dockerfile
 
     - name: Build and push Docker image
       if: ${{ ( inputs.environment == 'staging' ) }}
@@ -141,7 +141,7 @@ runs:
         push: true
         tags: ${{ steps.meta.outputs.tags }},  ${{ steps.imagepath.outputs.image_path_to_lower }}:staging
         labels: ${{ steps.meta.outputs.labels }}
-        file: ./${{ inputs.working_directory }}/Dockerfile
+        file: ./src/apps/${{ inputs.service_name }}/Dockerfile
 
     - name: Build and push Docker image
       if: ${{ ( inputs.environment == 'prerelease' ) }}
@@ -153,4 +153,4 @@ runs:
         push: true
         tags: ${{ steps.meta.outputs.tags }},  ${{ steps.imagepath.outputs.image_path_to_lower }}:prerelease
         labels: ${{ steps.meta.outputs.labels }}
-        file: ./${{ inputs.working_directory }}/Dockerfile
+        file: ./src/apps/${{ inputs.service_name }}/Dockerfile
