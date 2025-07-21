@@ -279,7 +279,7 @@ jobs:
           nexus_apt_repo_password: ${{ secrets.nexusAptRepoPassword }}
           package_registry_token: ${{ secrets.packageRegistryToken }}
           staging_run_number: ${{ steps.check_staging_tag.outputs.result }}
-          is_hotfix: ${{ steps.hotfix_check.outputs.HOTFIX_STATUS }}
+          is_hotfix: ${{ steps.hotfix_check.outputs.result == 'true' }}
           package_repo_username: ${{ secrets.packageRepoUsername }}
           package_repo_password: ${{ secrets.packageRepoPassword }}
           package_repo_host: ${{ secrets.packageRepoHost }}
@@ -301,7 +301,7 @@ jobs:
           nexus_apt_repo_password: ${{ secrets.nexusAptRepoPassword }}
           package_registry_token: ${{ secrets.packageRegistryToken }}
           staging_run_number: ${{ steps.check_staging_tag.outputs.result }}
-          is_hotfix: ${{ steps.hotfix_check.outputs.HOTFIX_STATUS }}
+          is_hotfix: ${{ steps.hotfix_check.outputs.result == 'true' }}
           working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
 
       - name: Build Docker image
@@ -341,7 +341,7 @@ jobs:
           nuget_github_host: ${{ secrets.nugetGithubHost }}
           nuget_github_username: ${{ secrets.nugetGithubUsername }}
           nuget_github_password: ${{ secrets.nugetGithubPassword }}
-          is_hotfix: ${{ steps.hotfix_check.outputs.HOTFIX_STATUS }}
+          is_hotfix: ${{ steps.hotfix_check.outputs.result == 'true' }}
           working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
 
           
