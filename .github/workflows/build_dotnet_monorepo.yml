@@ -121,7 +121,7 @@ jobs:
 
           if [ "$PATCH" -gt 0 ]; then
             PREV_PATCH=$((PATCH - 1))
-            HOTFIX_TAG="$SERVICE_NAME_release_${MAJOR}.${MINOR}.${PREV_PATCH}"
+            HOTFIX_TAG="${SERVICE_NAME}_release_${MAJOR}.${MINOR}.${PREV_PATCH}"
 
             echo "Checking if previous tag exists: $HOTFIX_TAG"
 
