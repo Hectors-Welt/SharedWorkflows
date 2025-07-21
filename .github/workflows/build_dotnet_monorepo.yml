@@ -88,29 +88,25 @@ jobs:
             exit 1
           fi
         shell: bash
-
       - name: If release tag, check if hotfix
         if: ${{ steps.parse_tag.outputs.environment == 'release' }}
         id: hotfix_check
         env:
-          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-
-          REPO="${{ github.repository }}"
-          GITHUB_TOKEN="${{ secrets.githubToken }}"
           CURRENT_TAG="${GITHUB_REF#refs/tags/}"
 
           # Split the tag into servicename, environment, and version
           IFS='_' read -ra TAG_PARTS <<< "$CURRENT_TAG"
-          SERVICE_NAME=${TAG_PARTS[0]}
-          ENVIRONMENT=${TAG_PARTS[1]}
-          VERSION=${TAG_PARTS[2]}
+          SERVICE_NAME="${TAG_PARTS[0]}"
+          ENVIRONMENT="${TAG_PARTS[1]}"
+          VERSION="${TAG_PARTS[2]}"
 
           # Split the version into major, minor, and patch
           IFS='.' read -ra VERSION_PARTS <<< "$VERSION"
-          MAJOR=${VERSION_PARTS[0]}
-          MINOR=${VERSION_PARTS[1]}
-          PATCH=${VERSION_PARTS[2]}
+          MAJOR="${VERSION_PARTS[0]}"
+          MINOR="${VERSION_PARTS[1]}"
+          PATCH="${VERSION_PARTS[2]}"
 
           echo "Service Name: $SERVICE_NAME"
           echo "Environment: $ENVIRONMENT"
@@ -119,22 +115,28 @@ jobs:
           echo "Minor: $MINOR"
           echo "Patch: $PATCH"
 
+          # Default to not a hotfix
+          echo "HOTFIX_STATUS=false" >> $GITHUB_ENV
+          echo "result=false" >> "$GITHUB_OUTPUT"
+
           if [ "$PATCH" -gt 0 ]; then
-            PATCH=$((PATCH-1))
-            HOTFIX_TAG="v$MAJOR.$MINOR.$PATCH"
+            PREV_PATCH=$((PATCH - 1))
+            HOTFIX_TAG="$SERVICE_NAME_release_${MAJOR}.${MINOR}.${PREV_PATCH}"
 
-            TAGS=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/refs/tags)
+            echo "Checking if previous tag exists: $HOTFIX_TAG"
 
-            if echo $TAGS | jq -e --arg tag "refs/tags/$HOTFIX_TAG" '.[] | select(.ref == $tag)' > /dev/null; then
+            # GitHub API pagination safe tag list (up to 1000 tags)
+            TAG_FOUND=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/tags?per_page=1000" \
+              | jq -r '.[].name' | grep -Fx "$HOTFIX_TAG" || true)
+
+            if [ -n "$TAG_FOUND" ]; then
+              echo "Hotfix detected: previous patch version exists."
               echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
-              echo "::set-output name=result::true"
+              echo "result=true" >> "$GITHUB_OUTPUT"
             else
-              echo "HOTFIX_STATUS=false" >> $GITHUB_ENV
-              echo "::set-output name=result::false"            
+              echo "No previous tag found — not a hotfix."
             fi
-          else
-            echo "HOTFIX_STATUS=false" >> $GITHUB_ENV
-            echo "::set-output name=result::false"
           fi
         shell: bash
 
