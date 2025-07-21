@@ -141,7 +141,7 @@ jobs:
         shell: bash
 
       - name: If release tag, check if staging tag exists and get run number
-        if: ${{( steps.parse_tag.outputs.environment == 'release' &&  && steps.hotfix_check.outputs.result == 'true')}}
+        if: ${{( steps.parse_tag.outputs.environment == 'release'  && steps.hotfix_check.outputs.result == 'true')}}
         id: check_staging_tag
         env:
           GITHUB_TOKEN: ${{ secrets.packageRegistryToken }}
