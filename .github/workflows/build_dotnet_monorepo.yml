@@ -141,7 +141,7 @@ jobs:
         shell: bash
 
       - name: If release tag, check if staging tag exists and get run number
-        if: ${{( steps.parse_tag.outputs.environment == 'release')}}
+        if: ${{( steps.parse_tag.outputs.environment == 'release' &&  && steps.hotfix_check.outputs.result == 'true')}}
         id: check_staging_tag
         env:
           GITHUB_TOKEN: ${{ secrets.packageRegistryToken }}
@@ -250,7 +250,7 @@ jobs:
         shell: bash
   
       - name: Build dotnet service
-        if: ${{ (( steps.parse_tag.outputs.environment != 'release' || ( steps.parse_tag.outputs.environment == 'release' && steps.hotfix_check.outputs.HOTFIX_STATUS == 'true')))  &&  steps.check_build_json.outputs.xUnit == 'false' }}
+        if: ${{ (( steps.parse_tag.outputs.environment != 'release' || ( steps.parse_tag.outputs.environment == 'release' && steps.hotfix_check.outputs.result == 'true')))  &&  steps.check_build_json.outputs.xUnit == 'false' }}
         uses: Hectors-Welt/SharedWorkflows/.github/actions/build-dotnet-service@main
         with:
           service_name: ${{ steps.parse_tag.outputs.service_name }}
