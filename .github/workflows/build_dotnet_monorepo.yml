@@ -116,34 +116,38 @@ jobs:
           echo "Patch: $PATCH"
 
           # Default to not a hotfix
-                  echo "HOTFIX_STATUS=false" >> $GITHUB_ENV
+          echo "HOTFIX_STATUS=false" >> $GITHUB_ENV
           echo "result=false" >> "$GITHUB_OUTPUT"
 
-          PAGE=1
-          TAG_FOUND=""
-          while true; do
-            TAGS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-              "https://api.github.com/repos/${GITHUB_REPOSITORY}/tags?per_page=100&page=$PAGE" \
-              | jq -r '.[].name')
-            if echo "$TAGS" | grep -Fxq "$HOTFIX_TAG"; then
-              TAG_FOUND="$HOTFIX_TAG"
-              break
-            fi
-            TAG_COUNT=$(echo "$TAGS" | wc -l)
-            if [ "$TAG_COUNT" -lt 100 ]; then
-              break
-            fi
-            PAGE=$((PAGE + 1))
-          done
 
-          if [ -n "$TAG_FOUND" ]; then
-            echo "Hotfix detected: previous patch version exists."
-            echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
-            echo "result=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No previous tag found — not a hotfix."
-          fi
-          
+          if [ "$PATCH" -gt 0 ]; then
+            PREV_PATCH=$((PATCH - 1))
+            HOTFIX_TAG="${SERVICE_NAME}_release_${MAJOR}.${MINOR}.${PREV_PATCH}"
+            PAGE=1
+            TAG_FOUND=""
+            while true; do
+              TAGS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/tags?per_page=100&page=$PAGE" \
+                | jq -r '.[].name')
+              if echo "$TAGS" | grep -Fxq "$HOTFIX_TAG"; then
+                TAG_FOUND="$HOTFIX_TAG"
+                break
+              fi
+              TAG_COUNT=$(echo "$TAGS" | wc -l)
+              if [ "$TAG_COUNT" -lt 100 ]; then
+                break
+              fi
+              PAGE=$((PAGE + 1))
+            done
+
+            if [ -n "$TAG_FOUND" ]; then
+              echo "Hotfix detected: previous patch version exists."
+              echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
+              echo "result=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "No previous tag found — not a hotfix."
+            fi
+          fi  
         shell: bash
 
       - name: If release tag, check if staging tag exists and get run number
