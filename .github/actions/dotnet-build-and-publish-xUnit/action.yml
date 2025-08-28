@@ -147,7 +147,7 @@ runs:
       if: ${{ (inputs.environment == 'release'  &&  inputs.is_hotfix  == 'false') }}
       id: debian_package
       run: |
-        curl --fail ${{ inputs.nexus_apt_debian_staging }}pool/x/${{ inputs.service_name }}/${{ inputs.service_name }}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb --output ${{ inputs.service_name }}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb
+        curl --fail ${{ inputs.nexus_apt_debian_staging }}pool/x/${{ inputs.service_name }}/${{ inputs.service_name }}_${{inputs.base_version}}.${{inputs.staging_run_number}}_armhf.deb --output ${{ inputs.service_name }}_${{inputs.base_version}}.${{inputs.staging_run_number}}_armhf.deb
       shell: bash
 
     - name: Package and Publish to Nexus
@@ -155,7 +155,7 @@ runs:
         if [[ "${{ inputs.environment }}" == "release" ]]; then
           if [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == false  ]]; then
             REPO_URL="${{ inputs.nexus_apt_debian }}"
-            DEB_FILE="${{ inputs.service_name }}_${{inputs.base_version}}.${{inputs.staging_run_number}}_amd64.deb"
+            DEB_FILE="${{ inputs.service_name }}_${{inputs.base_version}}.${{inputs.staging_run_number}}_armhf.deb"
           elif [[ "${{ inputs.environment }}" == "release" && "${{ inputs.is_hotfix }}" == true ]]; then
             REPO_URL="${{ inputs.nexus_apt_debian }}"
             DEB_FILE="${{ steps.package.outputs.file_name }}"
