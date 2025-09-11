@@ -96,7 +96,7 @@ runs:
     - name: Get image path
       id: imagepath
       run: |
-        DIR="src/apps/${{ inputs.service_name }}"
+        DIR="${{inputs.working_directory}}/${{ inputs.service_name }}"
         SERVICE="${{inputs.service_name}}"
         SERVICE_TO_LOWER="${{steps.toLowerCase.outputs.lowerCaseValue}}"
         REG="${{ inputs.docker_registry }}"
