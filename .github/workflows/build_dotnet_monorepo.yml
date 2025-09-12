@@ -215,18 +215,19 @@ jobs:
       - name: Locate service directory
         id: find_service_dir
         run: |
-       
-          if [ -d "src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}" ]; then
-            SERVICE_DIR="src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}"
-          elif [ -d "src/apps/Devices/${{ steps.parse_tag.outputs.service_name }}" ]; then
-            SERVICE_DIR="src/apps/Devices/${{ steps.parse_tag.outputs.service_name }}"
-          elif [ -d "src/apps/${{ steps.parse_tag.outputs.service_name }}" ]; then
-            SERVICE_DIR="src/apps/${{ steps.parse_tag.outputs.service_name }}"
+          
+          # check if service_name contains a ".", if so split and save first part as FOLDER_NAME
+          if [[ "${{ steps.parse_tag.outputs.service_name }}" == *.* ]]; then
+            IFS='.' read -ra PARTS <<< "${{ steps.parse_tag.outputs.service_name }}"
+            FOLDER_NAME="${PARTS[0]}"
+            SERVICE_NAME="${PARTS[1]}"
+            SERVICE_DIR="src/apps/$FOLDER_NAME/$SERVICE_NAME/${{ steps.parse_tag.outputs.service_name }}"
           else
-            echo "Service directory not found!" >&2
-            exit 1
+            SERVICE_DIR="src/apps/${{ steps.parse_tag.outputs.service_name }}"
           fi
+
           echo "service_path=$SERVICE_DIR" >> $GITHUB_OUTPUT
+          echo "Located service directory: $SERVICE_DIR"
         shell: bash
 
       - name: Check for build.json and extract targets
