@@ -215,19 +215,18 @@ jobs:
       - name: Locate service directory
         id: find_service_dir
         run: |
-          if [ -d "src/apps/${{ steps.parse_tag.outputs.service_name }}" ]; then
-            echo "service_path=src/apps/${{ steps.parse_tag.outputs.service_name }}" >> $GITHUB_OUTPUT
-            echo "Service directory found at src/apps/${{ steps.parse_tag.outputs.service_name }}"
-          elif [ -d "src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}" ]; then
-            echo "service_path=src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}" >> $GITHUB_OUTPUT
-            echo "Service directory found at src/apps/${{ steps.parse_tag.outputs.service_name }}"
-          elif [ -d "src/devices/${{ steps.parse_tag.outputs.service_name }}" ]; then
-            echo "service_path=src/devices/${{ steps.parse_tag.outputs.service_name }}" >> $GITHUB_OUTPUT
-            echo "Service directory found at src/devices/${{ steps.parse_tag.outputs.service_name }}"
-          else
+          if [ ${{ steps.parse_tag.outputs.service_name }} == AdminCenter.* ]; then
+            SERVICE_DIR="src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}"
+          elif [ ${{ steps.parse_tag.outputs.service_name }} == Devices.* ]; then
+            SERVICE_DIR="src/apps/Devices/${{ steps.parse_tag.outputs.service_name }}"
+          elsif [ -d "src/apps/${{ steps.parse_tag.outputs.service_name }}" ]; then
+            SERVICE_DIR="src/apps/${{ steps.parse_tag.outputs.service_name }}"
+           else
             echo "Service directory not found!" >&2
             exit 1
           fi
+
+          echo "service_path=$SERVICE_DIR" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Check for build.json and extract targets
