@@ -219,9 +219,9 @@ jobs:
             SERVICE_DIR="src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}"
           elif [ ${{ steps.parse_tag.outputs.service_name }} == Devices.* ]; then
             SERVICE_DIR="src/apps/Devices/${{ steps.parse_tag.outputs.service_name }}"
-          elsif [ -d "src/apps/${{ steps.parse_tag.outputs.service_name }}" ]; then
+          elif [ -d "src/apps/${{ steps.parse_tag.outputs.service_name }}" ]; then
             SERVICE_DIR="src/apps/${{ steps.parse_tag.outputs.service_name }}"
-           else
+          else
             echo "Service directory not found!" >&2
             exit 1
           fi
