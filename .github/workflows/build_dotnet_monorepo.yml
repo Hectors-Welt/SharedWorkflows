@@ -220,7 +220,7 @@ jobs:
             SERVICE_DIR="src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}"
           elif [ -d "src/apps/Devices/${{ steps.parse_tag.outputs.service_name }}" ]; then
             SERVICE_DIR="src/apps/Devices/${{ steps.parse_tag.outputs.service_name }}"
-          elif [ -d "src/apps/AdminCenter/${{ steps.parse_tag.outputs.service_name }}" ]; then
+          elif [ -d "src/apps/${{ steps.parse_tag.outputs.service_name }}" ]; then
             SERVICE_DIR="src/apps/${{ steps.parse_tag.outputs.service_name }}"
           else
             echo "Service directory not found!" >&2
