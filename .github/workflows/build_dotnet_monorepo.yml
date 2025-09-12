@@ -221,7 +221,7 @@ jobs:
             IFS='.' read -ra PARTS <<< "${{ steps.parse_tag.outputs.service_name }}"
             FOLDER_NAME="${PARTS[0]}"
             SERVICE_NAME="${PARTS[1]}"
-            SERVICE_DIR="src/apps/$FOLDER_NAME/${{ steps.parse_tag.outputs.service_name }}"
+            SERVICE_DIR="src/apps/$SERVICE_NAME/${{ steps.parse_tag.outputs.service_name }}"
           else
             SERVICE_DIR="src/apps/${{ steps.parse_tag.outputs.service_name }}"
           fi
