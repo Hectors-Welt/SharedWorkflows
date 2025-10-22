@@ -215,15 +215,20 @@ jobs:
       - name: Locate service directory
         id: find_service_dir
         run: |
-          
-          # check if service_name contains a ".", if so split and save first part as FOLDER_NAME
           if [[ "${{ steps.parse_tag.outputs.service_name }}" == *.* ]]; then
             IFS='.' read -ra PARTS <<< "${{ steps.parse_tag.outputs.service_name }}"
             FOLDER_NAME="${PARTS[0]}"
             SERVICE_NAME="${PARTS[1]}"
             SERVICE_DIR="src/apps/$FOLDER_NAME/$SERVICE_NAME"
           else
-            SERVICE_DIR="src/apps/${{ steps.parse_tag.outputs.service_name }}"
+            if [[ -d "src/apps/${{ steps.parse_tag.outputs.service_name }}" ]]; then
+              SERVICE_DIR="src/apps/${{ steps.parse_tag.outputs.service_name }}"
+            elif [[ -d "src/devices/${{ steps.parse_tag.outputs.service_name }}" ]]; then
+              SERVICE_DIR="src/devices/${{ steps.parse_tag.outputs.service_name }}"
+            else
+              echo "Error: Service directory not found."
+              exit 1
+            fi
           fi
 
           echo "service_path=$SERVICE_DIR" >> $GITHUB_OUTPUT
