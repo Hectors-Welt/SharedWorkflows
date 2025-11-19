@@ -124,3 +124,13 @@ jobs:
       stagingRunNumber: ${{ secrets.stagingRunNumber }} 
       isHotfix: ${{ secrets.isHotfix }}
 
+  build_and_publish_docker:
+    needs: [get_version]
+    uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_docker_image.yml@main
+    secrets:
+      dockerRepo: ${{ secrets.dockerRepo }}
+      nexusDockerUsername: ${{ secrets.nexusDockerUsername }}
+      nexusDockerPassword: ${{ secrets.nexusDockerPassword }}
+      packageRegistryToken: ${{ secrets.PACKAGE_REGISTRY_TOKEN }}
+      nodeVersion: ${{ needs.get_version.outputs.version }}
+
