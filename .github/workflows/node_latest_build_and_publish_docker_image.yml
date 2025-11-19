@@ -75,7 +75,7 @@ jobs:
         
         RUN echo //npm.pkg.github.com/:_authToken=${{ secrets.packageRegistryToken }} >> ~/.npmrc
         RUN echo @hectors-welt:registry=https://npm.pkg.github.com >> ~/.npmrc
-        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --omit=production --legacy-peer-deps 
+        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm i --force
                 
         RUN echo > ~/.npmrc
         
@@ -91,7 +91,7 @@ jobs:
         COPY package*.json ./
         RUN echo //npm.pkg.github.com/:_authToken=${{ secrets.packageRegistryToken }} >> ~/.npmrc
         RUN echo @hectors-welt:registry=https://npm.pkg.github.com >> ~/.npmrc
-        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --omit=production --legacy-peer-deps 
+        RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm i --force
         COPY . .
         COPY --from=development /usr/src/app/dist ./dist
         
