@@ -59,6 +59,55 @@ runs:
         password: ${{ inputs.nexus_docker_password }}
 
     - name: create docker file
+      if: ${{.inputs.service_name == 'AdminCenter.Devices' }}
+      working-directory: ./${{inputs.working_directory}}
+      run: |
+
+        cat <<EOF >Dockerfile
+        FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+        WORKDIR /app
+        EXPOSE 80
+
+        # -------- BUILD STAGE --------
+        FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+        COPY ./ .
+        WORKDIR "/${{inputs.working_directory}}"
+
+        # Add private feeds
+        RUN dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
+        RUN dotnet nuget add source ${{ inputs.hangfire_feed_url }} --name hangfirePro --username ${{ inputs.hangfire_username }} --password ${{ inputs.hangfire_password }} --store-password-in-clear-text
+
+        RUN dotnet restore
+        RUN dotnet build "${{ inputs.service_name }}.csproj" -c Release -o /app/build
+
+        FROM build AS publish
+        RUN dotnet publish "${{ inputs.service_name }}.csproj" -c Release -o /app/publish \
+            /p:AssemblyVersion=${{ inputs.version }} \
+            /p:FileVersion=${{ inputs.version }}
+
+        # -------- FINAL RUNTIME STAGE --------
+        FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+        WORKDIR /app
+
+        # Install Ansible + sshpass like the old Node image
+        RUN apt-get update && \
+            apt-get install -y ansible sshpass python3 python3-pip && \
+            apt-get clean
+
+        # Copy app
+        COPY --from=publish /app/publish .
+
+        # If your repo contains ansible.cfg or playbooks, copy them:
+        COPY ./Playbooks/ansible.cfg /etc/ansible/ansible.cfg
+        COPY ./Playbooks /app/Playbooks
+
+        ENTRYPOINT [ "sh", "-c", "dotnet ${{ inputs.service_name }}.dll" ]
+        EOF
+        echo "Dockerfile created"
+      shell: bash
+
+    - name: create docker file default
+      if: ${{.inputs.service_name != 'AdminCenter.Devices' }}
       working-directory: ./${{inputs.working_directory}}
       run: |
         cat <<EOF >Dockerfile
