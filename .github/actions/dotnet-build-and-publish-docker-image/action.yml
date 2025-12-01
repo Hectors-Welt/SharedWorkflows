@@ -59,7 +59,7 @@ runs:
         password: ${{ inputs.nexus_docker_password }}
 
     - name: create docker file
-      if: ${{åinputs.service_name == 'AdminCenter.Devices' }}
+      if: ${{inputs.service_name == 'AdminCenter.Devices' }}
       working-directory: ./${{inputs.working_directory}}
       run: |
 
