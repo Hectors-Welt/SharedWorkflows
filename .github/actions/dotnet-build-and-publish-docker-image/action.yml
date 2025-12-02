@@ -92,7 +92,7 @@ runs:
             /p:FileVersion=${{ inputs.version }}
 
         # Copy Playbooks manually into publish output
-        COPY ./Playbooks /app/publish/Playbooks
+        COPY ${{ inputs.working_directory }}/Playbooks /app/publish/Playbooks
 
         # Optional: copy Ansible config into publish folder if needed
         # COPY ./Playbooks/ansible.cfg /app/publish/ansible.cfg
