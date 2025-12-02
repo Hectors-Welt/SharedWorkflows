@@ -112,7 +112,7 @@ runs:
         COPY --from=publish /app/publish .
 
         # Move ansible.cfg to standard location
-        COPY ./Playbooks/ansible.cfg /etc/ansible/ansible.cfg
+        COPY ${{ inputs.working_directory }}/Playbooks/ansible.cfg /etc/ansible/ansible.cfg
 
         ENTRYPOINT [ "sh", "-c", "dotnet ${{ inputs.service_name }}.dll" ]
 
