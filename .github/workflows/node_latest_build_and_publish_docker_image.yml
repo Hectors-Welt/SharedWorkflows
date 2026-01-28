@@ -82,6 +82,7 @@ jobs:
         ADD . /usr/src/app
         
         COPY . .
+        RUN npm install -g @nestjs/cli
         RUN npm run build
         
         FROM node:lts-alpine as production
