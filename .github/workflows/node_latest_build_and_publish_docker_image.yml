@@ -68,7 +68,7 @@ jobs:
         cat <<EOF >Dockerfile
         FROM node:lts-alpine As development
         
-        ENV NODE_ENV=production
+        ENV NODE_ENV=development
         WORKDIR /usr/src/app
         
         COPY package*.json ./
@@ -87,7 +87,7 @@ jobs:
         
         FROM node:lts-alpine as production
         
-        ENV NODE_ENV=production
+        ENV NODE_ENV=development
         WORKDIR /usr/src/app
         COPY package*.json ./
         RUN echo //npm.pkg.github.com/:_authToken=${{ secrets.packageRegistryToken }} >> ~/.npmrc
