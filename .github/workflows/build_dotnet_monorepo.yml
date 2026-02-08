@@ -155,61 +155,49 @@ jobs:
         id: check_staging_tag
         env:
           GITHUB_TOKEN: ${{ secrets.packageRegistryToken }}
+          SERVICE_NAME: ${{ steps.parse_tag.outputs.service_name }}
+          BASE_VERSION: ${{ steps.parse_tag.outputs.base_version }}
         run: |
-          TAG_VERSION=${{ steps.parse_tag.outputs.base_version }}
-          STAGING_TAG_NAME="${{ steps.parse_tag.outputs.service_name }}_staging_$TAG_VERSION"
-          REPO=${{ github.repository }}
-          API_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME)
-          if [[ $API_RESPONSE == *"ref"* ]]; then
-              COMMIT_SHA=$(echo "$API_RESPONSE" | jq -r '.object.sha')
-              echo "commit sha $COMMIT_SHA"
+          STAGING_TAG_NAME="${SERVICE_NAME}_staging_${BASE_VERSION}"
+          REPO="${{ github.repository }}"
+          API_RESPONSE=$(curl -sf -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME") || {
+            echo "Staging tag $STAGING_TAG_NAME not found."
+            echo "result=" >> "$GITHUB_OUTPUT"
+            echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
+            exit 0
+          }
 
-              # Get the actual commit sha (if annotated tag)
-              STAGING_TAG_API_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/git/tags/$COMMIT_SHA)
-              STAGING_COMMIT_SHA=$(echo "$STAGING_TAG_API_RESPONSE" | jq -r '.object.sha')
-              echo "staging commit sha $STAGING_COMMIT_SHA"
+          COMMIT_SHA=$(echo "$API_RESPONSE" | jq -r '.object.sha')
+          echo "commit sha $COMMIT_SHA"
 
-              PAGE=1
-              RUN_NUMBER=""
-              while [[ -z "$RUN_NUMBER" ]]; do
-                RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$REPO/actions/runs?per_page=100&page=$PAGE")
+          # Get the actual commit sha (if annotated tag)
+          STAGING_TAG_API_RESPONSE=$(curl -sf -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$REPO/git/tags/$COMMIT_SHA") || {
+            echo "Failed to resolve annotated tag object. Aborting."
+            exit 1
+          }
+          STAGING_COMMIT_SHA=$(echo "$STAGING_TAG_API_RESPONSE" | jq -r '.object.sha')
+          echo "staging commit sha $STAGING_COMMIT_SHA"
 
-                MATCHING_RUN=$(echo "$RESPONSE" | jq -r '[.workflow_runs[] | select(.head_sha == "'$STAGING_COMMIT_SHA'" and .conclusion == "success" and .head_branch == "${{ steps.parse_tag.outputs.service_name }}_staging_${{steps.parse_tag.outputs.base_version}}")] | max_by(.run_number) // empty')
-                if [[ -n "$MATCHING_RUN" ]]; then
-                  RUN_NUMBER=$(echo "$MATCHING_RUN" | jq -r '.run_number')
-                  break
-                fi
+          # Use server-side filtering by head_sha and status to avoid pagination issues
+          RESPONSE=$(curl -sf -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO/actions/runs?head_sha=$STAGING_COMMIT_SHA&status=success&per_page=10")
 
-                # Stop if less than 100 runs returned (no more pages)
-                RUN_COUNT=$(echo "$RESPONSE" | jq '.workflow_runs | length')
-                if [[ "$RUN_COUNT" -lt 100 ]]; then
-                  break
-                fi
+          RUN_NUMBER=$(echo "$RESPONSE" | jq -r '[.workflow_runs[]] | max_by(.run_number) | .run_number // empty')
 
-                ((PAGE++))
-              done
+          if [[ -n "$RUN_NUMBER" && "$RUN_NUMBER" != "null" ]]; then
+            echo "run number $RUN_NUMBER"
+            echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
+            echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
 
-              if [[ -n "$RUN_NUMBER" ]]; then
-                if [[ "$RUN_NUMBER" == "null" ]]; then
-                  echo "No successful run found for the staging tag. Aborting"
-                  exit 1
-                fi
-                echo "run number $RUN_NUMBER"
-                echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
-                echo "STAGING_RUN_NUMBER='$RUN_NUMBER'" >> $GITHUB_ENV
-
-                STAGING_TAG=$(git tag --list '${{ steps.parse_tag.outputs.service_name }}_staging_*' --sort=-v:refname | head -n 1)
-                STAGING_TAG_VERSION=${STAGING_TAG#${{ steps.parse_tag.outputs.service_name }}_staging_}
-                echo "STAGING_TAG_VERSION=$STAGING_TAG_VERSION" >> $GITHUB_ENV
-                echo "::set-output name=result::$RUN_NUMBER"
-              else
-                echo "::set-output name=result::''"
-                echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
-              fi
-            else
-              echo "::set-output name=result::''"
-              echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
-            fi
+            STAGING_TAG=$(git tag --list "${SERVICE_NAME}_staging_*" --sort=-v:refname | head -n 1)
+            STAGING_TAG_VERSION=${STAGING_TAG#${SERVICE_NAME}_staging_}
+            echo "STAGING_TAG_VERSION=$STAGING_TAG_VERSION" >> $GITHUB_ENV
+            echo "result=$RUN_NUMBER" >> "$GITHUB_OUTPUT"
+          else
+            echo "No successful run found for staging commit $STAGING_COMMIT_SHA."
+            echo "result=" >> "$GITHUB_OUTPUT"
+            echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
+          fi
         shell: bash
 
       - name: Locate service directory
