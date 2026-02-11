@@ -196,6 +196,8 @@ runs:
         tags: ${{ steps.meta.outputs.tags }},  ${{ steps.imagepath.outputs.image_path_to_lower }}:release
         labels: ${{ steps.meta.outputs.labels }}
         file: ./${{inputs.working_directory}}/Dockerfile
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Build and push Docker image
       if: ${{ ( inputs.environment == 'staging' ) }}
@@ -208,6 +210,8 @@ runs:
         tags: ${{ steps.meta.outputs.tags }},  ${{ steps.imagepath.outputs.image_path_to_lower }}:staging
         labels: ${{ steps.meta.outputs.labels }}
         file: ./${{inputs.working_directory}}/Dockerfile
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Build and push Docker image
       if: ${{ ( inputs.environment == 'prerelease' ) }}
@@ -220,3 +224,5 @@ runs:
         tags: ${{ steps.meta.outputs.tags }},  ${{ steps.imagepath.outputs.image_path_to_lower }}:prerelease
         labels: ${{ steps.meta.outputs.labels }}
         file: ./${{inputs.working_directory}}/Dockerfile
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

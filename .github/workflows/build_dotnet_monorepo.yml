@@ -55,17 +55,11 @@ jobs:
       STAGING_RUN_NUMBER: ${{ steps.check_staging_tag.outputs.result }}
     runs-on: self-hosted
     container:
-      image: ubuntu:22.04
+      image: ${{ secrets.dockerRepo }}/ci-runner:latest
       options: --privileged
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
     steps:
-      - name: Install dependencies
-        run: |
-          apt-get update
-          apt-get install -y git curl jq zip sudo docker.io libicu-dev
-        shell: bash
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
