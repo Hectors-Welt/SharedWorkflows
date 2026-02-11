@@ -4,7 +4,7 @@ on:
   workflow_call:
     secrets:
       nexusAptRepoHostPrerelease:
-        required: true  
+        required: true
       nexusAptRepoHost:
         required: true
       packageRegistryToken:
@@ -44,9 +44,9 @@ on:
       nugetGithubHost:
         required: true
       nugetGithubUsername:
-        required: true  
+        required: true
       nugetGithubPassword:
-        required: true  
+        required: true
       githubToken:
         required: true
 jobs:
@@ -63,7 +63,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y git curl jq zip sudo docker.io
+          apt-get install -y git curl jq zip sudo docker.io libicu-dev
         shell: bash
 
       - name: Checkout repository
@@ -158,7 +158,7 @@ jobs:
             else
               echo "No previous tag found — not a hotfix."
             fi
-          fi  
+          fi
         shell: bash
 
       - name: If release tag, check if staging tag exists and get run number
@@ -262,21 +262,21 @@ jobs:
             echo "::set-output name=xUnit::false"
           fi
         shell: bash
-  
+
       - name: Build dotnet service
         if: ${{ (( steps.parse_tag.outputs.environment != 'release' || ( steps.parse_tag.outputs.environment == 'release' && steps.hotfix_check.outputs.result == 'true')))  &&  steps.check_build_json.outputs.xUnit == 'false' }}
         uses: Hectors-Welt/SharedWorkflows/.github/actions/build-dotnet-service@main
         with:
           service_name: ${{ steps.parse_tag.outputs.service_name }}
           version: ${{ steps.parse_tag.outputs.version }}
-          dotnet_version: '8'
+          dotnet_version: "8"
           nuget_github_host: ${{ secrets.nugetGithubHost }}
           nuget_github_username: ${{ secrets.nugetGithubUsername }}
           nuget_github_password: ${{ secrets.nugetGithubPassword }}
           hangfire_feed_url: ${{ secrets.hangfireFeedUrl }}
           hangfire_username: ${{ secrets.hangfireUsername }}
           hangfire_password: ${{ secrets.hangfirePassword }}
-          working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
+          working_directory: ${{ steps.find_service_dir.outputs.service_path }}
 
       - name: Build and publish zip package
         uses: Hectors-Welt/SharedWorkflows/.github/actions/dotnet-build-and-publish-zip@main
@@ -298,7 +298,7 @@ jobs:
           package_repo_password: ${{ secrets.packageRepoPassword }}
           package_repo_host: ${{ secrets.packageRepoHost }}
           package_repo_port: ${{ secrets.packageRepoPort }}
-          working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
+          working_directory: ${{ steps.find_service_dir.outputs.service_path }}
 
       - name: Build debian and publish debian package
         uses: Hectors-Welt/SharedWorkflows/.github/actions/dotnet-build-and-publish-debian@main
@@ -316,7 +316,7 @@ jobs:
           package_registry_token: ${{ secrets.packageRegistryToken }}
           staging_run_number: ${{ steps.check_staging_tag.outputs.result }}
           is_hotfix: ${{ steps.hotfix_check.outputs.result == 'true' }}
-          working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
+          working_directory: ${{ steps.find_service_dir.outputs.service_path }}
 
       - name: Build Docker image
         if: ${{ steps.check_build_json.outputs.docker == 'true' }}
@@ -336,8 +336,8 @@ jobs:
           hangfire_feed_url: ${{ secrets.hangfireFeedUrl }}
           hangfire_username: ${{ secrets.hangfireUsername }}
           hangfire_password: ${{ secrets.hangfirePassword }}
-          working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
-          
+          working_directory: ${{ steps.find_service_dir.outputs.service_path }}
+
       - name: Build xUnit package
         if: ${{ steps.check_build_json.outputs.xUnit == 'true' }}
         uses: Hectors-Welt/SharedWorkflows/.github/actions/dotnet-build-and-publish-xUnit@main
@@ -347,7 +347,7 @@ jobs:
           version: ${{ steps.parse_tag.outputs.version }}
           base_version: ${{ steps.parse_tag.outputs.base_version }}
           nexus_apt_repo_username: ${{ secrets.nexusAptRepoUsername }}
-          nexus_apt_repo_password: ${{ secrets.nexusAptRepoPassword }}          
+          nexus_apt_repo_password: ${{ secrets.nexusAptRepoPassword }}
           nexus_apt_debian: ${{ secrets.nexusAptDebian }}
           nexus_apt_debian_pre: ${{ secrets.nexusAptDebianPre }}
           nexus_apt_debian_staging: ${{ secrets.nexusAptDebianStaging }}
@@ -356,7 +356,4 @@ jobs:
           nuget_github_username: ${{ secrets.nugetGithubUsername }}
           nuget_github_password: ${{ secrets.nugetGithubPassword }}
           is_hotfix: ${{ steps.hotfix_check.outputs.result == 'true' }}
-          working_directory: ${{ steps.find_service_dir.outputs.service_path }} 
-
-          
-          
+          working_directory: ${{ steps.find_service_dir.outputs.service_path }}
