@@ -55,20 +55,14 @@ jobs:
       STAGING_RUN_NUMBER: ${{ steps.check_staging_tag.outputs.result }}
     runs-on: self-hosted
     container:
-      image: ubuntu:22.04
+      image: docker.nexus.hectorts.de/ci-runner:latest
+      credentials:
+        username: ${{ secrets.nexusDockerUsername }}
+        password: ${{ secrets.nexusDockerPassword }}
       options: --privileged
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
     steps:
-      - name: Install dependencies
-        run: |
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update
-          apt-get install -y git curl jq zip sudo libicu-dev docker.io
-        shell: bash
-        env:
-          DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
