@@ -17,3 +17,4 @@ RUN apt-get update && \
 # Install only the Docker CLI (no daemon)
 RUN curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz | \
     tar xz --strip-components=1 -C /usr/local/bin docker/docker
+CMD ["tail", "-f", "/dev/null"]                                              
