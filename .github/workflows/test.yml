@@ -5,7 +5,7 @@ on:
 
 jobs:
   test:
-    runs-on: self-hosted
+    runs-on: gharunner01
    
     container:
       image: ubuntu:22.04
