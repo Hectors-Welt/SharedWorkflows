@@ -64,7 +64,7 @@ jobs:
         run: |
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
-          apt-get install -y git curl jq zip sudo libicu-dev
+          apt-get install -y git curl jq zip sudo libicu-dev docker.io
         shell: bash
         env:
           DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
