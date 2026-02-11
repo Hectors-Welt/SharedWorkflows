@@ -1,11 +1,21 @@
-name: Test Runner
+name: Test Container On Self-Hosted
 
 on:
   workflow_dispatch:
 
 jobs:
   test:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, my-server]  # or just self-hosted
+   
+    container:
+      image: ubuntu:22.04
 
     steps:
-      - run: echo "Runner works!"
+      - name: Show container info
+        run: |
+          echo "User:"
+          whoami
+          echo "Hostname:"
+          hostname
+          echo "OS:"
+          cat /etc/os-release
