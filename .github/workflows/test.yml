@@ -5,7 +5,7 @@ on:
 
 jobs:
   test:
-    runs-on: [self-hosted, my-server]  # or just self-hosted
+    runs-on: [self-hosted] 
    
     container:
       image: ubuntu:22.04
