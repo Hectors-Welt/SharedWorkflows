@@ -53,7 +53,15 @@ jobs:
   build-and-publish:
     outputs:
       STAGING_RUN_NUMBER: ${{ steps.check_staging_tag.outputs.result }}
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    container:
+      image: docker.nexus.hectorts.de/ci-runner:latest
+      credentials:
+        username: ${{ secrets.nexusDockerUsername }}
+        password: ${{ secrets.nexusDockerPassword }}
+      options: --privileged
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
