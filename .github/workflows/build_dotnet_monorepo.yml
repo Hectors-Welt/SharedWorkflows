@@ -53,8 +53,22 @@ jobs:
   build-and-publish:
     outputs:
       STAGING_RUN_NUMBER: ${{ steps.check_staging_tag.outputs.result }}
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    container:
+      image: ubuntu:22.04
+      options: --privileged
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
     steps:
+      - name: Install dependencies
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y git curl jq zip sudo libicu-dev
+        shell: bash
+        env:
+          DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
