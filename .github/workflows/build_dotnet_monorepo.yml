@@ -55,7 +55,7 @@ jobs:
       STAGING_RUN_NUMBER: ${{ steps.check_staging_tag.outputs.result }}
     runs-on: self-hosted
     container:
-      image: ${{ secrets.dockerRepo }}/ci-runner:latest
+      image: docker.nexus.hectorts.de/ci-runner:latest"
       options: --privileged
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
