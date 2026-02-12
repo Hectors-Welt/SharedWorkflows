@@ -131,10 +131,10 @@ runs:
       working-directory: ./${{inputs.working_directory}}
       run: |
         cat <<EOF >Dockerfile
-        FROM mcr.microsoft.com/dotnet/aspnet:${{ inputs.dotnet_version }} AS base
+        FROM mcr.microsoft.com/dotnet/aspnet:${{ inputs.dotnet_version }}.0 AS base
         WORKDIR /app
         EXPOSE 80
-        FROM mcr.microsoft.com/dotnet/sdk:${{ inputs.dotnet_version }} AS build
+        FROM mcr.microsoft.com/dotnet/sdk:${{ inputs.dotnet_version }}.0 AS build
         COPY ./ .
         RUN ls -al
         WORKDIR "/${{inputs.working_directory}}/."
