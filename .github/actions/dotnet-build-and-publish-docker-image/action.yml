@@ -47,6 +47,9 @@ inputs:
   working_directory:
     description: "The working directory for the service"
     required: true
+  dotnet_version:
+    description: "The version of .NET Core to use"
+    required: true
 
 runs:
   using: "composite"
@@ -128,10 +131,10 @@ runs:
       working-directory: ./${{inputs.working_directory}}
       run: |
         cat <<EOF >Dockerfile
-        FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+        FROM mcr.microsoft.com/dotnet/aspnet:${{ inputs.dotnet_version }} AS base
         WORKDIR /app
         EXPOSE 80
-        FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+        FROM mcr.microsoft.com/dotnet/sdk:${{ inputs.dotnet_version }} AS build
         COPY ./ .
         RUN ls -al
         WORKDIR "/${{inputs.working_directory}}/."
