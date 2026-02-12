@@ -49,6 +49,8 @@ on:
         required: true
       githubToken:
         required: true
+      dotnetVersion:
+        required: false
 jobs:
   build-and-publish:
     outputs:
@@ -266,7 +268,7 @@ jobs:
         with:
           service_name: ${{ steps.parse_tag.outputs.service_name }}
           version: ${{ steps.parse_tag.outputs.version }}
-          dotnet_version: "8"
+          dotnet_version: ${{ secrets.dotnetVersion || '8' }}.x
           nuget_github_host: ${{ secrets.nugetGithubHost }}
           nuget_github_username: ${{ secrets.nugetGithubUsername }}
           nuget_github_password: ${{ secrets.nugetGithubPassword }}
@@ -353,4 +355,3 @@ jobs:
           nuget_github_username: ${{ secrets.nugetGithubUsername }}
           nuget_github_password: ${{ secrets.nugetGithubPassword }}
           is_hotfix: ${{ steps.hotfix_check.outputs.result == 'true' }}
-          working_directory: ${{ steps.find_service_dir.outputs.service_path }}
