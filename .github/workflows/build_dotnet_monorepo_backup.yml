@@ -186,14 +186,11 @@ jobs:
           STAGING_COMMIT_SHA=$(echo "$STAGING_TAG_API_RESPONSE" | jq -r '.object.sha')
           echo "staging commit sha $STAGING_COMMIT_SHA"
 
-          # Get the current workflow name to filter runs
-          CURRENT_WORKFLOW_NAME="${GITHUB_WORKFLOW}"
-
-          # Use server-side filtering by head_sha and status to avoid pagination issues
+          # Use workflow-specific endpoint to only get runs from the same calling workflow
           RESPONSE=$(curl -sf -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$REPO/actions/runs?head_sha=$STAGING_COMMIT_SHA&status=success&per_page=10")
+            "https://api.github.com/repos/$REPO/actions/workflows/$GITHUB_WORKFLOW_ID/runs?head_sha=$STAGING_COMMIT_SHA&status=success&per_page=10")
 
-          RUN_NUMBER=$(echo "$RESPONSE" | jq -r --arg wf "$CURRENT_WORKFLOW_NAME" '[.workflow_runs[] | select(.name == $wf)] | max_by(.run_number) | .run_number // empty')
+          RUN_NUMBER=$(echo "$RESPONSE" | jq -r '[.workflow_runs[]] | max_by(.run_number) | .run_number // empty')
 
           if [[ -n "$RUN_NUMBER" && "$RUN_NUMBER" != "null" ]]; then
             echo "run number $RUN_NUMBER"
