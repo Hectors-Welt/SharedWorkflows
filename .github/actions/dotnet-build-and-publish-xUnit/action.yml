@@ -58,9 +58,10 @@ runs:
 
     - name: Add nuget source
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
-      run: >
-        dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }}
-        --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
+      run: |
+        if ! dotnet nuget list source --format short | grep -iq "github"; then
+          dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
+        fi
       shell: bash
       working-directory: src/devices/${{inputs.service_name}}
 

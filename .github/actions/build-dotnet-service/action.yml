@@ -43,8 +43,12 @@ runs:
 
     - name: if no 'v' tag, add feeds
       run: |
-        dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
-        dotnet nuget add source ${{ inputs.hangfire_feed_url }} --name hangfirePro --username ${{ inputs.hangfire_username }} --password ${{ inputs.hangfire_password }} --store-password-in-clear-text
+        if ! dotnet nuget list source --format short | grep -iq "github"; then
+          dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
+        fi
+        if ! dotnet nuget list source --format short | grep -iq "hangfirePro"; then
+          dotnet nuget add source ${{ inputs.hangfire_feed_url }} --name hangfirePro --username ${{ inputs.hangfire_username }} --password ${{ inputs.hangfire_password }} --store-password-in-clear-text
+        fi
         dotnet restore
       shell: bash
       working-directory: ${{ inputs.working_directory }}
