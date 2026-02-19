@@ -59,7 +59,8 @@ runs:
     - name: Add nuget source
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       run: |
-        if ! dotnet nuget list source --format short | grep -iq "github"; then
+        SOURCES=$(dotnet nuget list source)
+        if [[ ! "$SOURCES" =~ "github" ]]; then
           dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
         fi
       shell: bash
