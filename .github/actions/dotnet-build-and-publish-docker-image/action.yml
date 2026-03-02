@@ -65,7 +65,7 @@ runs:
         password: ${{ inputs.nexus_docker_password }}
 
     - name: create docker file
-      if: ${{inputs.service_name == 'AdminCenter.Devices' }}
+      if: ${{inputs.service_name == 'AdminCenter.Devices' || inputs.service_name == 'AdminCenter.ServiceManager' }} 
       working-directory: ./${{inputs.working_directory}}
       run: |
 
@@ -127,7 +127,7 @@ runs:
       shell: bash
 
     - name: create docker file default
-      if: ${{inputs.service_name != 'AdminCenter.Devices' }}
+      if: ${{inputs.service_name != 'AdminCenter.Devices' && inputs.service_name != 'AdminCenter.ServiceManager'}}
       working-directory: ./${{inputs.working_directory}}
       run: |
         cat <<EOF >Dockerfile
