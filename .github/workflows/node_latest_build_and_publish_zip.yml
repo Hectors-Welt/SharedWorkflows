@@ -134,7 +134,7 @@ jobs:
         
     - name: If no 'v' tag, Download a single artifact
       if: ${{(!startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/v') || (startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true'))}}
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v7
       with:
         name: project-zip
             
