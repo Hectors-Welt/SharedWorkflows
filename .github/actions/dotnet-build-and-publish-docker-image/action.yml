@@ -70,13 +70,13 @@ runs:
       run: |
 
         cat <<EOF >Dockerfile
-        FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+        FROM mcr.microsoft.com/dotnet/aspnet:${{ inputs.dotnet_version }}.0 AS base
         WORKDIR /app
         EXPOSE 80
         # --------------------------
         # BUILD STAGE
         # --------------------------
-        FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+        FROM mcr.microsoft.com/dotnet/sdk:${{ inputs.dotnet_version }}.0 AS build
         COPY ./ ./
         WORKDIR "/${{inputs.working_directory}}"
 
@@ -106,7 +106,7 @@ runs:
         # --------------------------
         # FINAL RUNTIME IMAGE
         # --------------------------
-        FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+        FROM mcr.microsoft.com/dotnet/aspnet:${{ inputs.dotnet_version }}.0 AS final
         WORKDIR /app
 
         # Install Ansible + sshpass
