@@ -116,7 +116,7 @@ runs:
     - name: If no 'v' tag, build deb package
       if: ${{ ( inputs.environment != 'release' || ( inputs.environment == 'release' && inputs.is_hotfix == 'true')) }}
       id: package
-      uses: jiro4989/build-deb-action@v2
+      uses: jiro4989/build-deb-action@v4
       with:
         package: ${{ inputs.service_name }}
         package_root: ${{ inputs.working_directory }}/Publish

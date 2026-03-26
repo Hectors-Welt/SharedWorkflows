@@ -101,7 +101,7 @@ runs:
 
     - name: copy file via ssh password to staging repo
       if: ${{ inputs.environment == 'staging' }}
-      uses: appleboy/scp-action@master
+      uses: appleboy/scp-action@v1
       with:
         host: ${{ inputs.package_repo_host }}
         username: ${{ inputs.package_repo_username }}
@@ -113,7 +113,7 @@ runs:
 
     - name: copy file via ssh password to release repo
       if: ${{ (inputs.environment == 'release'  &&   (inputs.is_hotfix  == 'false' || inputs.is_hotfix == '') ) }}
-      uses: appleboy/scp-action@master
+      uses: appleboy/scp-action@v1
       with:
         host: ${{ inputs.package_repo_host }}
         username: ${{ inputs.package_repo_username }}
@@ -125,7 +125,7 @@ runs:
 
     - name: copy file via ssh password to release repo
       if: ${{ (inputs.environment == 'release'  &&  inputs.is_hotfix  == 'true') }}
-      uses: appleboy/scp-action@master
+      uses: appleboy/scp-action@v1
       with:
         host: ${{ inputs.package_repo_host }}
         username: ${{ inputs.package_repo_username }}
@@ -148,7 +148,7 @@ runs:
 
     - name: copy file via ssh password to prerelease repo
       if: ${{ inputs.environment == 'prerelease' }}
-      uses: appleboy/scp-action@master
+      uses: appleboy/scp-action@v1
       with:
         host: ${{ inputs.package_repo_host }}
         username: ${{ inputs.package_repo_username }}

@@ -66,7 +66,7 @@ jobs:
         - /var/run/docker.sock:/var/run/docker.sock
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -89,10 +89,10 @@ jobs:
             echo "Environment: $ENVIRONMENT"
             echo "Version: $VERSION_WITH_RUN_NUMBER"
 
-            echo "::set-output name=service_name::$SERVICE_NAME"
-            echo "::set-output name=environment::$ENVIRONMENT"
-            echo "::set-output name=base_version::$VERSION"
-            echo "::set-output name=version::$VERSION_WITH_RUN_NUMBER"
+            echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
+            echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+            echo "base_version=$VERSION" >> $GITHUB_OUTPUT
+            echo "version=$VERSION_WITH_RUN_NUMBER" >> $GITHUB_OUTPUT
           else
             echo "Tag format is incorrect. Expected format: <service_name>_<environment>_<version>"
             exit 1
@@ -249,16 +249,16 @@ jobs:
             TARGETS=$(jq -r '.buildTargets[]' "$BASE_PATH/build.json")
             echo "Targets found: $TARGETS"
 
-            echo "::set-output name=docker::$(echo "$TARGETS" | grep -q "docker" && echo true || echo false)"
-            echo "::set-output name=linux::$(echo "$TARGETS" | grep -q "linux" && echo true || echo false)"
-            echo "::set-output name=windows::$(echo "$TARGETS" | grep -q "windows" && echo true || echo false)"
-            echo "::set-output name=xUnit::$(echo "$TARGETS" | grep -q "xUnit" && echo true || echo false)"
+            echo "docker=$(echo "$TARGETS" | grep -q "docker" && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "linux=$(echo "$TARGETS" | grep -q "linux" && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "windows=$(echo "$TARGETS" | grep -q "windows" && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "xUnit=$(echo "$TARGETS" | grep -q "xUnit" && echo true || echo false)" >> $GITHUB_OUTPUT
           else
             echo "No build.json found, defaulting to all targets."
-            echo "::set-output name=docker::true"
-            echo "::set-output name=linux::true"
-            echo "::set-output name=windows::true"
-            echo "::set-output name=xUnit::false"
+            echo "docker=true" >> $GITHUB_OUTPUT
+            echo "linux=true" >> $GITHUB_OUTPUT
+            echo "windows=true" >> $GITHUB_OUTPUT
+            echo "xUnit=false" >> $GITHUB_OUTPUT
           fi
         shell: bash
 
