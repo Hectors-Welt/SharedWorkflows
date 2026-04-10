@@ -65,7 +65,7 @@ runs:
         password: ${{ inputs.nexus_docker_password }}
 
     - name: create docker file
-      if: ${{inputs.service_name == 'AdminCenter.Devices' || inputs.service_name == 'AdminCenter.ServiceManager' }} 
+      if: ${{inputs.service_name == 'AdminCenter.Devices' || inputs.service_name == 'AdminCenter.ServiceManager' }}
       working-directory: ./${{inputs.working_directory}}
       run: |
 
@@ -130,20 +130,32 @@ runs:
       if: ${{inputs.service_name != 'AdminCenter.Devices' && inputs.service_name != 'AdminCenter.ServiceManager'}}
       working-directory: ./${{inputs.working_directory}}
       run: |
+        # Detect if this project uses npm (e.g. Tailwind CSS)
+        NODE_INSTALL=""
+        NPM_INSTALL=""
+        if [ -f package.json ]; then
+          NODE_INSTALL=$(cat <<'BLOCK'
+        RUN apt-get update && apt-get install -y curl && \
+            curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+            apt-get install -y nodejs && \
+            apt-get clean
+        BLOCK
+          )
+          NPM_INSTALL="RUN npm ci"
+        fi
+
         cat <<EOF >Dockerfile
         FROM mcr.microsoft.com/dotnet/aspnet:${{ inputs.dotnet_version }}.0 AS base
         WORKDIR /app
         EXPOSE 80
         FROM mcr.microsoft.com/dotnet/sdk:${{ inputs.dotnet_version }}.0 AS build
+        ${NODE_INSTALL}
         COPY ./ .
-        RUN ls -al
         WORKDIR "/${{inputs.working_directory}}/."
+        ${NPM_INSTALL}
         RUN dotnet nuget add source ${{ inputs.nuget_github_host }} --name github --username ${{ inputs.nuget_github_username }} --password ${{ inputs.nuget_github_password }} --store-password-in-clear-text
-        WORKDIR "/${{inputs.working_directory}}/."
         RUN dotnet nuget add source ${{ inputs.hangfire_feed_url }} --name hangfirePro --username ${{ inputs.hangfire_username }} --password ${{ inputs.hangfire_password }} --store-password-in-clear-text
-        WORKDIR "/${{inputs.working_directory}}/."
         RUN dotnet restore
-        WORKDIR "/${{inputs.working_directory}}/."
         RUN dotnet build "${{ inputs.service_name }}.csproj" -c Release -o /app/build
         FROM build AS publish
         RUN dotnet publish "${{ inputs.service_name }}.csproj" -c Release -o /app/publish /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }}
