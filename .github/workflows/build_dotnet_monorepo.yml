@@ -262,9 +262,6 @@ jobs:
           fi
         shell: bash
 
-      - name: Fix Git ownership
-        run: git config --global --add safe.directory /__w/${{ github.repository }}/${{ github.repository }}
-
       - name: Build dotnet service
         if: ${{ (( steps.parse_tag.outputs.environment != 'release' || ( steps.parse_tag.outputs.environment == 'release' && steps.hotfix_check.outputs.result == 'true')))  &&  steps.check_build_json.outputs.xUnit == 'false' }}
         uses: Hectors-Welt/SharedWorkflows/.github/actions/build-dotnet-service@main
