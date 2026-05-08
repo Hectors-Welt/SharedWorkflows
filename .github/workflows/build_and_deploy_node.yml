@@ -126,6 +126,7 @@ jobs:
 
   build_and_publish_docker:
     needs: [get_version]
+    if: ${{ needs.set_skip_docker_env.outputs.should_skip_docker != '' }}
     uses: Hectors-Welt/SharedWorkflows/.github/workflows/node_latest_build_and_publish_docker_image.yml@main
     secrets:
       dockerRepo: ${{ secrets.dockerRepo }}
