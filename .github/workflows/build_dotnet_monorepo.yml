@@ -228,8 +228,7 @@ jobs:
             echo "run number $RUN_NUMBER"
             echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
             echo "STAGING_RUN_NUMBER=$RUN_NUMBER" >> $GITHUB_ENV
-            STAGING_TAG=$(git tag --list "${SERVICE_NAME}_staging_*" --sort=-v:refname | head -n 1)
-            STAGING_TAG_VERSION=${STAGING_TAG#${SERVICE_NAME}_staging_}
+            STAGING_TAG_VERSION=${STAGING_TAG_NAME#${SERVICE_NAME}_staging_}
             echo "STAGING_TAG_VERSION=$STAGING_TAG_VERSION" >> $GITHUB_ENV
             echo "result=$RUN_NUMBER" >> "$GITHUB_OUTPUT"
           else
