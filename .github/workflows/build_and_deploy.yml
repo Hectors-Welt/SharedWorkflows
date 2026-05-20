@@ -77,13 +77,16 @@ jobs:
             if echo $TAGS | jq -e --arg tag "refs/tags/$HOTFIX_TAG" '.[] | select(.ref == $tag)' > /dev/null; then
               echo "HOTFIX_STATUS=success" >> $GITHUB_ENV
               echo "::set-output name=result::true"
+              echo "hotfix true"
             else
               echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
-            echo "::set-output name=result::false"            
+            echo "::set-output name=result::false"   
+            echo "hotfix false"
             fi
           else
             echo "HOTFIX_STATUS=failure" >> $GITHUB_ENV
             echo "::set-output name=result::false"
+            echo "hotfix false"
           fi
 
   check_for_staging_if_v_tag:
