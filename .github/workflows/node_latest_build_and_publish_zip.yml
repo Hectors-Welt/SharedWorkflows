@@ -47,7 +47,7 @@ jobs:
         node-version: 18.x
         
     - name: Set isHotfix environment variable
-      run: echo "IS_HOTFIX=${{ secrets.isHotfix }}" >> $GITHUB_ENV
+      run: echo "IS_HOTFIX=true" >> $GITHUB_ENV
 
     - name: Prepare local environment variables
       if: startsWith(github.ref, 'refs/tags/v')
