@@ -173,7 +173,7 @@ jobs:
         run: |
           STAGING_TAG_NAME="${SERVICE_NAME}_staging_${BASE_VERSION}"
           REPO="${{ github.repository }}"
-      
+
           API_RESPONSE=$(curl -sf -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/$REPO/git/ref/tags/$STAGING_TAG_NAME") || {
             echo "Staging tag $STAGING_TAG_NAME not found."
@@ -181,10 +181,10 @@ jobs:
             echo "STAGING_TAG_EXISTS=false" >> $GITHUB_ENV
             exit 0
           }
-      
+
           COMMIT_SHA=$(echo "$API_RESPONSE" | jq -r '.object.sha')
           echo "commit sha $COMMIT_SHA"
-      
+
           # Get the actual commit sha (handle both annotated and lightweight tags)
           OBJECT_TYPE=$(echo "$API_RESPONSE" | jq -r '.object.type')
           if [[ "$OBJECT_TYPE" == "tag" ]]; then
@@ -198,32 +198,32 @@ jobs:
             STAGING_COMMIT_SHA="$COMMIT_SHA"
           fi
           echo "staging commit sha $STAGING_COMMIT_SHA"
-      
+
           # Paginate through all successful runs for this commit SHA
           RUN_NUMBER=""
           PAGE=1
           while true; do
             RESPONSE=$(curl -sf -H "Authorization: token $GITHUB_TOKEN" \
               "https://api.github.com/repos/$REPO/actions/runs?head_sha=$STAGING_COMMIT_SHA&status=success&per_page=100&page=$PAGE")
-      
+
             PAGE_COUNT=$(echo "$RESPONSE" | jq '.workflow_runs | length')
             if [[ "$PAGE_COUNT" -eq 0 ]]; then
               echo "No more pages to check (stopped at page $PAGE)."
               break
             fi
-      
+
             MATCH=$(echo "$RESPONSE" | jq -r --arg tag "$STAGING_TAG_NAME" \
               '[.workflow_runs[] | select(.head_branch == $tag)] | max_by(.run_number) | .run_number // empty')
-      
+
             if [[ -n "$MATCH" && "$MATCH" != "null" ]]; then
               RUN_NUMBER="$MATCH"
               echo "Found run number $RUN_NUMBER on page $PAGE."
               break
             fi
-      
+
             PAGE=$((PAGE + 1))
           done
-      
+
           if [[ -n "$RUN_NUMBER" && "$RUN_NUMBER" != "null" ]]; then
             echo "run number $RUN_NUMBER"
             echo "STAGING_TAG_EXISTS=true" >> $GITHUB_ENV
@@ -289,6 +289,32 @@ jobs:
             echo "xUnit=false" >> $GITHUB_OUTPUT
           fi
         shell: bash
+
+      - name: Check for Client directory
+        id: check_client
+        run: |
+          if [ -d "${{ steps.find_service_dir.outputs.service_path }}/Client" ]; then
+            echo "has_client=true" >> $GITHUB_OUTPUT
+            echo "Client directory found"
+          else
+            echo "has_client=false" >> $GITHUB_OUTPUT
+            echo "No Client directory found"
+          fi
+        shell: bash
+
+      - name: Setup Node.js
+        if: steps.check_client.outputs.has_client == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+
+      # - name: Install and build Client
+      #   if: steps.check_client.outputs.has_client == 'true'
+      #   working-directory: ${{ steps.find_service_dir.outputs.service_path }}/Client
+      #   run: |
+      #     npm install
+      #     npm run build
+      #   shell: bash
 
       - name: Build dotnet service
         if: ${{ (( steps.parse_tag.outputs.environment != 'release' || ( steps.parse_tag.outputs.environment == 'release' && steps.hotfix_check.outputs.result == 'true')))  &&  steps.check_build_json.outputs.xUnit == 'false' }}
