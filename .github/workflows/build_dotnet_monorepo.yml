@@ -306,15 +306,13 @@ jobs:
         if: steps.check_client.outputs.has_client == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 24.x
 
-      # - name: Install and build Client
-      #   if: steps.check_client.outputs.has_client == 'true'
-      #   working-directory: ${{ steps.find_service_dir.outputs.service_path }}/Client
-      #   run: |
-      #     npm install
-      #     npm run build
-      #   shell: bash
+      - name: Install Client dependencies
+        if: steps.check_client.outputs.has_client == 'true'
+        working-directory: ${{ steps.find_service_dir.outputs.service_path }}/Client
+        run: npm install
+        shell: bash
 
       - name: Build dotnet service
         if: ${{ (( steps.parse_tag.outputs.environment != 'release' || ( steps.parse_tag.outputs.environment == 'release' && steps.hotfix_check.outputs.result == 'true')))  &&  steps.check_build_json.outputs.xUnit == 'false' }}
