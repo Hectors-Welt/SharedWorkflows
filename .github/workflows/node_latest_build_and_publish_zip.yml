@@ -150,8 +150,12 @@ jobs:
         run: curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.SERVICE}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows-pre/${{ env.SERVICE}}/${{ env.SERVICE}}-${{ env.VERSION }}.zip
 
       - name: Publish zip to nexus release repo
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: ${{startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'false'}}
         run: curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.SERVICE}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip https://nexus.hectorts.de/repository/windows/${{ env.SERVICE}}/${{ env.SERVICE}}-${{ env.BASE_VERSION }}.${{secrets.stagingRunNumber}}.zip
+
+      - name: Publish zip to nexus release repo
+        if: ${{startsWith(github.ref, 'refs/tags/v') && env.IS_HOTFIX == 'true'}}
+        run: curl -u "${{ secrets.nexusAptRepoUsername }}:${{ secrets.nexusAptRepoPassword }}" --upload-file ${{ env.SERVICE}}-${{ env.VERSION }}.zip https://nexus.hectorts.de/repository/windows/${{ env.SERVICE}}/${{ env.SERVICE}}-${{ env.VERSION }}.zip
 
       - name: Publish zip to nexus staging repo
         if: startsWith(github.ref, 'refs/tags/staging-')
